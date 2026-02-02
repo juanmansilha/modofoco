@@ -11,11 +11,9 @@ import { TransactionList } from "@/components/finance/TransactionList";
 import { TransactionModal } from "@/components/finance/TransactionModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { PageBanner } from "@/components/ui/PageBanner";
-import { CategoryManager } from "@/components/finance/CategoryManager";
+import { CategoryManager } => "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
-import { useGlobalData } from "@/contexts/GlobalDataProvider";
 import { FOCO_POINTS } from "@/lib/gamification";
-import * as SupabaseFinance from "@/lib/supabase-finance";
 
 // Mock Data Intializers
 const INITIAL_ACCOUNTS: any[] = [];
@@ -24,35 +22,30 @@ const INITIAL_TRANSACTIONS: any[] = [];
 
 export default function FinancePage() {
     const { awardFP } = useGamification();
-    const { userData } = useGlobalData();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [accounts, setAccounts] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load from Supabase on mount
+    // Load from localStorage on mount
     useEffect(() => {
-        if (!userData?.id) return;
-
-        const loadData = async () => {
+        const loadData = () => {
             try {
                 setIsLoading(true);
-                const [accountsData, transactionsData, categoriesData] = await Promise.all([
-                    SupabaseFinance.getFinanceAccounts(userData.id),
-                    SupabaseFinance.getFinanceTransactions(userData.id),
-                    SupabaseFinance.getFinanceCategories(userData.id)
-                ]);
+                const savedAccounts = localStorage.getItem('mf_finance_accounts');
+                const savedTransactions = localStorage.getItem('mf_finance_transactions');
+                const savedCategories = localStorage.getItem('mf_finance_categories');
 
-                setAccounts(accountsData);
-                setTransactions(transactionsData);
+                if (savedAccounts) {
+                    setAccounts(JSON.parse(savedAccounts));
+                }
 
-                if (categoriesData.length > 0) {
-                    setCategories(categoriesData.map(cat => ({
-                        id: cat.id,
-                        name: cat.name,
-                        type: cat.type,
-                        color: cat.color || 'bg-blue-500'
-                    })));
+                if (savedTransactions) {
+                    setTransactions(JSON.parse(savedTransactions));
+                }
+
+                if (savedCategories) {
+                    setCategories(JSON.parse(savedCategories));
                 }
             } catch (error) {
                 console.error('Error loading finance data:', error);
@@ -62,9 +55,20 @@ export default function FinancePage() {
         };
 
         loadData();
-    }, [userData?.id]);
+    }, []);
 
-    // Save to localStorage whenever accounts or transactions change
+    // Save to localStorage whenever data changes
+    useEffect(() => {
+        if (accounts.length > 0) {
+            localStorage.setItem('mf_finance_accounts', JSON.stringify(accounts));
+        }
+    }, [accounts]);
+
+    useEffect(() => {
+        if (transactions.length > 0) {
+            localStorage.setItem('mf_finance_transactions', JSON.stringify(transactions));
+        }
+    }, [transactions]);
 
 
     // Helpers
