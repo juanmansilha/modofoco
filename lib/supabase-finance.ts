@@ -15,6 +15,7 @@ export interface FinanceTransaction {
     id: string;
     user_id: string;
     account_id: string;
+    accountId?: string; // Compatibility with frontend camelCase
     description: string;
     amount: number;
     type: 'income' | 'expense';
@@ -95,9 +96,16 @@ export async function getFinanceTransactions(userId: string): Promise<FinanceTra
 }
 
 export async function createFinanceTransaction(transaction: Omit<FinanceTransaction, 'id' | 'created_at' | 'updated_at'>): Promise<FinanceTransaction> {
+    // Map camelCase to snake_case for Supabase
+    const { accountId, ...rest } = transaction;
+    const dbTransaction = {
+        ...rest,
+        account_id: accountId || (transaction as any).account_id
+    };
+
     const { data, error } = await supabase
         .from('finance_transactions')
-        .insert([transaction])
+        .insert([dbTransaction])
         .select()
         .single();
 
@@ -106,9 +114,16 @@ export async function createFinanceTransaction(transaction: Omit<FinanceTransact
 }
 
 export async function updateFinanceTransaction(id: string, updates: Partial<FinanceTransaction>): Promise<FinanceTransaction> {
+    // Map camelCase to snake_case for Supabase
+    const dbUpdates: any = { ...updates };
+    if ((updates as any).accountId) {
+        dbUpdates.account_id = (updates as any).accountId;
+        delete dbUpdates.accountId;
+    }
+
     const { data, error } = await supabase
         .from('finance_transactions')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();

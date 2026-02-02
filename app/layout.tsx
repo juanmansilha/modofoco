@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ModoFoco",
   description: "Cinematic Dark Experience",
+  manifest: "/manifest.json",
 };
 
 import { AppShell } from "@/components/layout/AppShell";

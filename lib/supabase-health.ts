@@ -212,10 +212,14 @@ export async function getFastingState(userId: string) {
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .single();
+        .order('start_time', { ascending: false })
+        .limit(1);
 
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is no rows returned
-    return data;
+    if (error) {
+        console.error("Error fetching fasting state:", error);
+        return null;
+    }
+    return data && data.length > 0 ? data[0] : null;
 }
 
 export async function updateFastingLog(userId: string, state: any) {
