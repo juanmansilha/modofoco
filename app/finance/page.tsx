@@ -15,15 +15,14 @@ import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 
 // Mock Data Intializers
-const INITIAL_ACCOUNTS = [];
+const INITIAL_ACCOUNTS: any[] = [];
 
-const INITIAL_TRANSACTIONS = [];
+const INITIAL_TRANSACTIONS: any[] = [];
 
 export default function FinancePage() {
     const { awardFP } = useGamification();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
-    // @ts-ignore
     const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
 
     // Helpers
