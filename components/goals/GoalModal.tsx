@@ -176,8 +176,8 @@ export function GoalModal({ isOpen, onClose, onSave, initialData }: GoalModalPro
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
-                                                        if (file.size > 3 * 1024 * 1024) {
-                                                            alert("A imagem deve ser menor que 3MB.");
+                                                        if (file.size > 1 * 1024 * 1024) {
+                                                            alert("A imagem deve ser menor que 1MB devido a limitações de armazenamento.");
                                                             return;
                                                         }
                                                         const reader = new FileReader();

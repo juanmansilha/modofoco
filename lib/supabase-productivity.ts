@@ -108,6 +108,8 @@ export async function createGoal(goal: any) {
         delete dbGoal.id;
     }
 
+    console.log("Saving Goal:", dbGoal); // Debug logging
+
     const { data, error } = await supabase
         .from('goals')
         .insert([dbGoal])
