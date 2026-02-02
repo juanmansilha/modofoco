@@ -299,3 +299,50 @@ export async function syncLocalToSupabase(
         }
     }
 }
+// ============ TRANSFERS ============
+
+export async function transferFunds(
+    userId: string,
+    fromAccountId: string,
+    toAccountId: string,
+    amount: number,
+    date: string,
+    description: string = "Transferência entre contas"
+): Promise<void> {
+
+    // 1. Transaction Out (Source)
+    const expenseTx: any = {
+        user_id: userId,
+        account_id: fromAccountId,
+        description: `Transferência para outra conta`,
+        amount: amount,
+        type: 'expense',
+        category: 'Transferência',
+        date: date,
+        confirmed: true
+    };
+
+    // 2. Transaction In (Destination)
+    const incomeTx: any = {
+        user_id: userId,
+        account_id: toAccountId,
+        description: `Transferência recebida`,
+        amount: amount,
+        type: 'income',
+        category: 'Transferência',
+        date: date,
+        confirmed: true
+    };
+
+    // Execute both inserts
+    const { error: error1 } = await supabase.from('finance_transactions').insert([expenseTx]);
+    if (error1) throw error1;
+
+    const { error: error2 } = await supabase.from('finance_transactions').insert([incomeTx]);
+    if (error2) throw error2;
+
+    // Accounts balances will be auto-calculated by the UI based on transaction history or triggers if they exist.
+    // However, if we store balance in accounts table, we should update them too.
+    // Assuming UI recalculates or we trigger an update. Ideally use an RPC or triggers.
+    // For now, simple inserts.
+}

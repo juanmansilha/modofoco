@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Plus, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Tag } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Tag, ArrowRightLeft } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -9,6 +9,7 @@ import { AccountCard } from "@/components/finance/AccountCard";
 import { AccountModal } from "@/components/finance/AccountModal";
 import { TransactionList } from "@/components/finance/TransactionList";
 import { TransactionModal } from "@/components/finance/TransactionModal";
+import { TransferModal } from "@/components/finance/TransferModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
@@ -82,6 +83,7 @@ export default function FinancePage() {
     // Modals & Editing
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<any>(null);
     const [editingTransaction, setEditingTransaction] = useState<any>(null);
@@ -249,6 +251,36 @@ export default function FinancePage() {
             setAccounts(updatedAccounts);
         } catch (error) {
             console.error('Error confirming transaction:', error);
+            console.error('Error confirming transaction:', error);
+        }
+    };
+
+    const handleTransfer = async (data: any) => {
+        if (!userId) return;
+        try {
+            await SupabaseFinance.transferFunds(
+                userId,
+                data.fromAccountId,
+                data.toAccountId,
+                data.amount,
+                data.date,
+                data.description
+            );
+
+            // Refresh data
+            setIsLoading(true);
+            const [accountsData, transactionsData] = await Promise.all([
+                SupabaseFinance.getFinanceAccounts(userId),
+                SupabaseFinance.getFinanceTransactions(userId)
+            ]);
+            setAccounts(accountsData);
+            setTransactions(transactionsData);
+            setIsLoading(false);
+
+            alert("Transferência realizada com sucesso!");
+        } catch (error) {
+            console.error('Error processing transfer:', error);
+            alert("Erro ao realizar transferência.");
         }
     };
 
@@ -357,12 +389,22 @@ export default function FinancePage() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h3 className="text-xl font-bold text-white">Minhas Contas</h3>
-                            <button
-                                onClick={() => { setEditingAccount(null); setIsAccountModalOpen(true); }}
-                                className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
-                            >
-                                <Plus size={20} />
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setIsTransferModalOpen(true)}
+                                    className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg transition-colors"
+                                    title="Transferir entre contas"
+                                >
+                                    <ArrowRightLeft size={20} />
+                                </button>
+                                <button
+                                    onClick={() => { setEditingAccount(null); setIsAccountModalOpen(true); }}
+                                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                                    title="Nova conta"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
                         </div>
                         <div className="space-y-3">
                             {accounts.map(account => (
@@ -434,6 +476,13 @@ export default function FinancePage() {
                 onClose={() => setIsCategoryManagerOpen(false)}
                 categories={categories}
                 onSave={handleSaveCategories}
+            />
+
+            <TransferModal
+                isOpen={isTransferModalOpen}
+                onClose={() => setIsTransferModalOpen(false)}
+                onTransfer={handleTransfer}
+                accounts={accounts}
             />
         </div>
     );

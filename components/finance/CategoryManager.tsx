@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Edit2, Trash2, Tag, Home, ShoppingCart, Car, Coffee, Utensils, Zap, Heart, Gift, Briefcase, GraduationCap, Plane, Wallet, TrendingUp, DollarSign } from "lucide-react";
 
 interface Category {
@@ -62,6 +62,11 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
     const [localCategories, setLocalCategories] = useState<Category[]>(categories);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [newCategory, setNewCategory] = useState({ name: "", type: "expense" as "income" | "expense", color: "#3b82f6", icon: "Tag" });
+
+    // Sync with parent state when it updates
+    useEffect(() => {
+        setLocalCategories(categories);
+    }, [categories]);
 
     if (!isOpen) return null;
 
