@@ -23,16 +23,42 @@ const INITIAL_TRANSACTIONS: any[] = [];
 export default function FinancePage() {
     const { awardFP } = useGamification();
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
-    const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [transactions, setTransactions] = useState<any[]>([]);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        const savedAccounts = localStorage.getItem('mf_finance_accounts');
+        const savedTransactions = localStorage.getItem('mf_finance_transactions');
+
+        if (savedAccounts) {
+            try {
+                setAccounts(JSON.parse(savedAccounts));
+            } catch (e) {
+                console.error('Error loading accounts:', e);
+            }
+        }
+
+        if (savedTransactions) {
+            try {
+                setTransactions(JSON.parse(savedTransactions));
+            } catch (e) {
+                console.error('Error loading transactions:', e);
+            }
+        }
+    }, []);
 
     // Save to localStorage whenever accounts or transactions change
     useEffect(() => {
-        localStorage.setItem('mf_finance_accounts', JSON.stringify(accounts));
+        if (accounts.length > 0) {
+            localStorage.setItem('mf_finance_accounts', JSON.stringify(accounts));
+        }
     }, [accounts]);
 
     useEffect(() => {
-        localStorage.setItem('mf_finance_transactions', JSON.stringify(transactions));
+        if (transactions.length > 0) {
+            localStorage.setItem('mf_finance_transactions', JSON.stringify(transactions));
+        }
     }, [transactions]);
 
     // Helpers
@@ -84,24 +110,22 @@ export default function FinancePage() {
     }, [transactions, currentMonth]);
 
     const stats = useMemo(() => {
-        const now = new Date();
         return filteredTransactions.reduce((acc, curr) => {
-            const transactionDate = new Date(curr.date);
-            const isPending = transactionDate > now;
+            const isConfirmed = curr.confirmed !== false; // Default to true if not set
 
             if (curr.type === "income") {
                 acc.income += curr.amount;
-                if (isPending) {
-                    acc.pendingIncome += curr.amount;
-                } else {
+                if (isConfirmed) {
                     acc.confirmedIncome += curr.amount;
+                } else {
+                    acc.pendingIncome += curr.amount;
                 }
             } else {
                 acc.expense += curr.amount;
-                if (isPending) {
-                    acc.pendingExpense += curr.amount;
-                } else {
+                if (isConfirmed) {
                     acc.confirmedExpense += curr.amount;
+                } else {
+                    acc.pendingExpense += curr.amount;
                 }
             }
             return acc;
@@ -203,9 +227,15 @@ export default function FinancePage() {
                 }
                 return acc;
             }));
-
+            ```
             setTransactions(transactions.filter(t => t.id !== id));
         }
+    };
+
+    const handleConfirmTransaction = (id: string) => {
+        setTransactions(transactions.map(t =>
+            t.id === id ? { ...t, confirmed: true } : t
+        ));
     };
 
     return (
