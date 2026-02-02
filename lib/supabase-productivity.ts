@@ -14,9 +14,21 @@ export async function getTasks(userId: string) {
 }
 
 export async function createTask(task: any) {
+    // Map camelCase to snake_case for Supabase
+    const dbTask = {
+        ...task,
+        due_date: task.dueDate || task.due_date,
+        user_id: task.userId || task.user_id,
+        column_id: task.columnId || task.column_id
+    };
+    // Remove camelCase keys to avoid schema errors
+    delete dbTask.dueDate;
+    delete dbTask.userId;
+    delete dbTask.columnId;
+
     const { data, error } = await supabase
         .from('tasks')
-        .insert([task])
+        .insert([dbTask])
         .select()
         .single();
 
@@ -25,9 +37,21 @@ export async function createTask(task: any) {
 }
 
 export async function updateTask(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+
+    // Map camelCase to snake_case
+    if (updates.dueDate !== undefined) {
+        dbUpdates.due_date = updates.dueDate;
+        delete dbUpdates.dueDate;
+    }
+    if (updates.columnId !== undefined) {
+        dbUpdates.column_id = updates.columnId;
+        delete dbUpdates.columnId;
+    }
+
     const { data, error } = await supabase
         .from('tasks')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();

@@ -51,22 +51,6 @@ export interface Meal {
     recurrence?: string[];
 }
 
-export interface FastingState {
-    isActive: boolean;
-    startTime: number | null; // Timestamp
-    planId: string;
-    elapsedSeconds: number; // For persistence mock
-}
-
-export interface SleepLog {
-    id: string;
-    date: string; // YYYY-MM-DD
-    bedtime: string; // HH:MM
-    wakeup: string; // HH:MM
-    duration: number; // hours
-    quality: "good" | "avg" | "bad";
-}
-
 export interface UserData {
     name: string;
     email?: string;
@@ -129,8 +113,6 @@ interface GlobalDataContextType {
     runSessions: RunSession[];
     dietMeals: Meal[];
     generalRoutines: GlobalRoutine[];
-    fastingState: FastingState;
-    sleepLogs: SleepLog[];
 
     // User Data
     userData: UserData;
@@ -164,9 +146,6 @@ interface GlobalDataContextType {
     addGeneralRoutine: (routine: GlobalRoutine) => void;
     updateGeneralRoutine: (routine: GlobalRoutine) => void;
     deleteGeneralRoutine: (id: string) => void;
-
-    updateFastingState: (state: FastingState) => void;
-    addSleepLog: (log: SleepLog) => void;
 
     // Productivity Actions
     addTask: (task: Task) => void;
@@ -218,15 +197,6 @@ const INITIAL_DIET: Meal[] = [];
 
 const INITIAL_ROUTINES: GlobalRoutine[] = [];
 
-const INITIAL_FASTING: FastingState = {
-    isActive: false,
-    startTime: null,
-    planId: "16-8",
-    elapsedSeconds: 0
-};
-
-const INITIAL_SLEEP: SleepLog[] = [];
-
 const INITIAL_TASKS: Task[] = [];
 
 const INITIAL_GOALS: Goal[] = [];
@@ -241,8 +211,6 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     const [runSessions, setRunSessions] = useState<RunSession[]>(INITIAL_RUN);
     const [dietMeals, setDietMeals] = useState<Meal[]>(INITIAL_DIET);
     const [generalRoutines, setGeneralRoutines] = useState<GlobalRoutine[]>(INITIAL_ROUTINES);
-    const [fastingState, setFastingState] = useState<FastingState>(INITIAL_FASTING);
-    const [sleepLogs, setSleepLogs] = useState<SleepLog[]>(INITIAL_SLEEP);
 
     // Productivity State
     const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
@@ -282,8 +250,6 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     run,
                     meals,
                     routines,
-                    sleep,
-                    fasting,
                     taskData,
                     goalData,
                     subjectData,
@@ -293,8 +259,6 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     SupabaseHealth.getRunSessions(userId),
                     SupabaseHealth.getMeals(userId),
                     SupabaseHealth.getGeneralRoutines(userId),
-                    SupabaseHealth.getSleepLogs(userId),
-                    SupabaseHealth.getFastingState(userId),
                     SupabaseProductivity.getTasks(userId),
                     SupabaseProductivity.getGoals(userId),
                     SupabaseProductivity.getStudySubjects(userId),
@@ -305,15 +269,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                 setRunSessions(run);
                 setDietMeals(meals);
                 setGeneralRoutines(routines);
-                setSleepLogs(sleep);
-                if (fasting) {
-                    setFastingState({
-                        isActive: fasting.is_active,
-                        startTime: fasting.start_time ? new Date(fasting.start_time).getTime() : null,
-                        planId: fasting.plan_id,
-                        elapsedSeconds: 0
-                    });
-                }
+
                 setTasks(taskData.map(t => ({
                     ...t,
                     priority: t.priority as any,
@@ -467,26 +423,6 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             setGeneralRoutines(prev => prev.filter(item => item.id !== id));
         } catch (e) {
             console.error("Error deleting routine:", e);
-        }
-    };
-
-    const updateFastingState = async (state: FastingState) => {
-        if (!userId) return;
-        try {
-            await SupabaseHealth.updateFastingLog(userId, state);
-            setFastingState(state);
-        } catch (e) {
-            console.error("Error updating fasting state:", e);
-        }
-    };
-
-    const addSleepLog = async (log: SleepLog) => {
-        if (!userId) return;
-        try {
-            const created = await SupabaseHealth.createSleepLog({ ...log, user_id: userId, id: undefined });
-            setSleepLogs([created, ...sleepLogs]);
-        } catch (e) {
-            console.error("Error adding sleep log:", e);
         }
     };
 
@@ -904,12 +840,12 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             isAuthLoading,
 
             // Health
-            gymRoutines, runSessions, dietMeals, generalRoutines, fastingState, sleepLogs,
+            gymRoutines, runSessions, dietMeals, generalRoutines,
             addGymRoutine, updateGymRoutine, deleteGymRoutine, toggleGymCompletion,
             addRunSession, updateRunSession, deleteRunSession, toggleRunCompletion,
             addMeal, updateMeal, deleteMeal,
             addGeneralRoutine, updateGeneralRoutine, deleteGeneralRoutine,
-            updateFastingState, addSleepLog,
+
             // Productivity
             tasks, goals, subjects, resources,
             addTask, updateTask, deleteTask,
