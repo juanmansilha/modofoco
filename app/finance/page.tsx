@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Plus, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Tag } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -11,6 +11,7 @@ import { TransactionList } from "@/components/finance/TransactionList";
 import { TransactionModal } from "@/components/finance/TransactionModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { PageBanner } from "@/components/ui/PageBanner";
+import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 
@@ -41,8 +42,35 @@ export default function FinancePage() {
     // Modals & Editing
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<any>(null);
     const [editingTransaction, setEditingTransaction] = useState<any>(null);
+
+    // Categories State
+    const [categories, setCategories] = useState<any[]>([
+        { id: "1", name: "Salário", type: "income", color: "bg-emerald-500" },
+        { id: "2", name: "Freelance", type: "income", color: "bg-blue-500" },
+        { id: "3", name: "Alimentação", type: "expense", color: "bg-orange-500" },
+        { id: "4", name: "Transporte", type: "expense", color: "bg-cyan-500" },
+        { id: "5", name: "Moradia", type: "expense", color: "bg-purple-500" },
+    ]);
+
+    // Save categories to localStorage
+    useEffect(() => {
+        localStorage.setItem('mf_finance_categories', JSON.stringify(categories));
+    }, [categories]);
+
+    // Load categories from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem('mf_finance_categories');
+        if (saved) {
+            try {
+                setCategories(JSON.parse(saved));
+            } catch (e) {
+                console.error('Error loading categories:', e);
+            }
+        }
+    }, []);
 
     // --- Logic ---
 
@@ -56,11 +84,35 @@ export default function FinancePage() {
     }, [transactions, currentMonth]);
 
     const stats = useMemo(() => {
+        const now = new Date();
         return filteredTransactions.reduce((acc, curr) => {
-            if (curr.type === "income") acc.income += curr.amount;
-            else acc.expense += curr.amount;
+            const transactionDate = new Date(curr.date);
+            const isPending = transactionDate > now;
+
+            if (curr.type === "income") {
+                acc.income += curr.amount;
+                if (isPending) {
+                    acc.pendingIncome += curr.amount;
+                } else {
+                    acc.confirmedIncome += curr.amount;
+                }
+            } else {
+                acc.expense += curr.amount;
+                if (isPending) {
+                    acc.pendingExpense += curr.amount;
+                } else {
+                    acc.confirmedExpense += curr.amount;
+                }
+            }
             return acc;
-        }, { income: 0, expense: 0 });
+        }, {
+            income: 0,
+            expense: 0,
+            confirmedIncome: 0,
+            pendingIncome: 0,
+            confirmedExpense: 0,
+            pendingExpense: 0
+        });
     }, [filteredTransactions]);
 
     const totalBalance = useMemo(() => {
@@ -174,16 +226,25 @@ export default function FinancePage() {
                         <p className="text-sm text-zinc-400">Acompanhe suas finanças em tempo real.</p>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-lg border border-white/5 w-full md:w-auto justify-between md:justify-start">
-                        <button onClick={prevMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
-                            <ChevronLeft size={16} />
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsCategoryManagerOpen(true)}
+                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                        >
+                            <Tag size={16} />
+                            Categorias
                         </button>
-                        <span className="text-sm font-bold text-white min-w-[120px] text-center capitalize">
-                            {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
-                        </span>
-                        <button onClick={nextMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
-                            <ChevronRight size={16} />
-                        </button>
+                        <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-lg border border-white/5">
+                            <button onClick={prevMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="text-sm font-bold text-white min-w-[120px] text-center capitalize">
+                                {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+                            </span>
+                            <button onClick={nextMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -201,14 +262,24 @@ export default function FinancePage() {
                             <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><TrendingUp size={20} /></div>
                             <span className="text-zinc-400 text-sm">Entradas</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">{stats.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        <p className="text-2xl font-bold text-white">{stats.confirmedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        {stats.pendingIncome > 0 && (
+                            <p className="text-xs text-zinc-500 mt-1">
+                                + {stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} pendente
+                            </p>
+                        )}
                     </div>
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={20} /></div>
                             <span className="text-zinc-400 text-sm">Saídas</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">{stats.expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        <p className="text-2xl font-bold text-white">{stats.confirmedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        {stats.pendingExpense > 0 && (
+                            <p className="text-xs text-zinc-500 mt-1">
+                                + {stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} pendente
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -288,6 +359,13 @@ export default function FinancePage() {
                 onSave={handleSaveTransaction}
                 accounts={accounts}
                 initialData={editingTransaction}
+            />
+
+            <CategoryManager
+                isOpen={isCategoryManagerOpen}
+                onClose={() => setIsCategoryManagerOpen(false)}
+                categories={categories}
+                onSave={setCategories}
             />
         </div>
     );
