@@ -9,26 +9,32 @@ import { cn } from "@/lib/utils";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
+import { LoadingScreen } from "./LoadingScreen";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile Menu State
     const pathname = usePathname();
     const router = useRouter();
-    const { userData } = useGlobalData();
+    const { userData, isAuthLoading } = useGlobalData();
     const isLoginPage = pathname === "/login" || pathname === "/onboarding";
 
     // Redirect to login if not authenticated
     useEffect(() => {
-        if (!isLoginPage && !userData.email) {
+        if (!isAuthLoading && !isLoginPage && !userData.email) {
             router.push("/login");
         }
-    }, [userData.email, isLoginPage, router]);
+    }, [userData.email, isLoginPage, router, isAuthLoading]);
 
     // Close mobile menu on route change
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [pathname]);
+
+    // Show loading screen while checking auth
+    if (isAuthLoading && !isLoginPage) {
+        return <LoadingScreen />;
+    }
 
     const content = isLoginPage ? (
         <main className="min-h-screen bg-[#050505]">{children}</main>

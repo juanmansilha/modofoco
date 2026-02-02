@@ -137,6 +137,7 @@ interface GlobalDataContextType {
     login: (email: string, pass: string) => Promise<void>;
     signup: (email: string, pass: string, name: string) => Promise<void>;
     logout: () => Promise<void>;
+    isAuthLoading: boolean;
 
     // Productivity Data
     tasks: Task[];
@@ -444,31 +445,45 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
 
     // --- User Data ---
     const [userData, setUserData] = useState<UserData>({
-        name: "Visitante",
+        name: "",
         email: "",
         whatsapp: "",
         photo: null,
         onboardingCompleted: false
     });
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
 
     // Supabase Auth Integration
     useEffect(() => {
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                // If logged in via Supabase, we could load data from a 'profiles' table here
-                // For now, we mix with localStorage
+                // Load user data from localStorage or use session data
                 const savedUser = localStorage.getItem("mf_user_data");
                 if (savedUser) {
-                    setUserData({ ...JSON.parse(savedUser), email: session.user.email });
+                    const parsed = JSON.parse(savedUser);
+                    setUserData({ ...parsed, email: session.user.email || parsed.email });
                 } else {
-                    setUserData(prev => ({ ...prev, email: session.user.email }));
+                    // Use metadata from Supabase
+                    const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "";
+                    const newUserData = {
+                        name,
+                        email: session.user.email || "",
+                        whatsapp: "",
+                        photo: null,
+                        onboardingCompleted: false
+                    };
+                    setUserData(newUserData);
+                    localStorage.setItem("mf_user_data", JSON.stringify(newUserData));
                 }
             } else {
-                // No session, maybe check local storage for 'offline' user or legacy
+                // No session
                 const savedUser = localStorage.getItem("mf_user_data");
-                if (savedUser) setUserData(JSON.parse(savedUser));
+                if (savedUser) {
+                    setUserData(JSON.parse(savedUser));
+                }
             }
+            setIsAuthLoading(false);
         });
 
         const {
@@ -477,10 +492,22 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             if (session) {
                 const savedUser = localStorage.getItem("mf_user_data");
                 if (savedUser) {
-                    setUserData({ ...JSON.parse(savedUser), email: session.user.email });
+                    const parsed = JSON.parse(savedUser);
+                    setUserData({ ...parsed, email: session.user.email || parsed.email });
                 } else {
-                    setUserData(prev => ({ ...prev, email: session.user.email }));
+                    const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "";
+                    const newUserData = {
+                        name,
+                        email: session.user.email || "",
+                        whatsapp: "",
+                        photo: null,
+                        onboardingCompleted: false
+                    };
+                    setUserData(newUserData);
+                    localStorage.setItem("mf_user_data", JSON.stringify(newUserData));
                 }
+            } else {
+                setUserData({ name: "", email: "", whatsapp: "", photo: null, onboardingCompleted: false });
             }
         });
 
@@ -524,6 +551,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             // User Data
             userData, updateUserData,
             login, signup, logout,
+            isAuthLoading,
 
             // Health
             gymRoutines, runSessions, dietMeals, generalRoutines, fastingState, sleepLogs,
