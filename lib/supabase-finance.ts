@@ -98,10 +98,16 @@ export async function getFinanceTransactions(userId: string): Promise<FinanceTra
 export async function createFinanceTransaction(transaction: Omit<FinanceTransaction, 'id' | 'created_at' | 'updated_at'>): Promise<FinanceTransaction> {
     // Map camelCase to snake_case for Supabase
     const { accountId, ...rest } = transaction;
-    const dbTransaction = {
+
+    const dbTransaction: any = {
         ...rest,
         account_id: accountId || (transaction as any).account_id
     };
+
+    if (dbTransaction.userId) {
+        dbTransaction.user_id = dbTransaction.userId;
+        delete dbTransaction.userId;
+    }
 
     const { data, error } = await supabase
         .from('finance_transactions')

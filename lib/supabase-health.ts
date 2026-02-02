@@ -15,6 +15,21 @@ export async function getGymSessions(userId: string) {
 
 export async function createGymSession(session: any) {
     const dbSession = { ...session };
+
+    // Map camelCase
+    if (dbSession.lastPerformed) {
+        dbSession.last_performed = dbSession.lastPerformed;
+        delete dbSession.lastPerformed;
+    }
+    if (dbSession.last_performed === "") dbSession.last_performed = null;
+
+    if (dbSession.date === "") dbSession.date = null;
+
+    if (dbSession.userId) {
+        dbSession.user_id = dbSession.userId;
+        delete dbSession.userId;
+    }
+
     // Let Supabase generate the ID
     if (!dbSession.id) {
         delete dbSession.id;
@@ -31,9 +46,17 @@ export async function createGymSession(session: any) {
 }
 
 export async function updateGymSession(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+
+    // Map camelCase
+    if (dbUpdates.lastPerformed) {
+        dbUpdates.last_performed = dbUpdates.lastPerformed;
+        delete dbUpdates.lastPerformed;
+    }
+
     const { data, error } = await supabase
         .from('gym_sessions')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -65,9 +88,23 @@ export async function getRunSessions(userId: string) {
 }
 
 export async function createRunSession(session: any) {
+    const dbSession = { ...session };
+
+    // Map camelCase
+    if (dbSession.userId) {
+        dbSession.user_id = dbSession.userId;
+        delete dbSession.userId;
+    }
+
+    if (dbSession.date === "") dbSession.date = null;
+
+    if (!dbSession.id) {
+        delete dbSession.id;
+    }
+
     const { data, error } = await supabase
         .from('run_sessions')
-        .insert([session])
+        .insert([dbSession])
         .select()
         .single();
 
@@ -76,9 +113,14 @@ export async function createRunSession(session: any) {
 }
 
 export async function updateRunSession(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+
+    // Safety check just in case
+    if (dbUpdates.userId) delete dbUpdates.userId;
+
     const { data, error } = await supabase
         .from('run_sessions')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -110,9 +152,23 @@ export async function getMeals(userId: string) {
 }
 
 export async function createMeal(meal: any) {
+    const dbMeal = { ...meal };
+
+    // Map camelCase
+    if (dbMeal.userId) {
+        dbMeal.user_id = dbMeal.userId;
+        delete dbMeal.userId;
+    }
+
+    if (dbMeal.date === "") dbMeal.date = null;
+
+    if (!dbMeal.id) {
+        delete dbMeal.id;
+    }
+
     const { data, error } = await supabase
         .from('meals')
-        .insert([meal])
+        .insert([dbMeal])
         .select()
         .single();
 
@@ -121,9 +177,12 @@ export async function createMeal(meal: any) {
 }
 
 export async function updateMeal(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+    if (dbUpdates.userId) delete dbUpdates.userId;
+
     const { data, error } = await supabase
         .from('meals')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -155,9 +214,24 @@ export async function getGeneralRoutines(userId: string) {
 }
 
 export async function createGeneralRoutine(routine: any) {
+    const dbRoutine = { ...routine };
+
+    // Map camelCase
+    if (dbRoutine.userId) {
+        dbRoutine.user_id = dbRoutine.userId;
+        delete dbRoutine.userId;
+    }
+    if (dbRoutine.completedDates) {
+        dbRoutine.completed_dates = dbRoutine.completedDates;
+        delete dbRoutine.completedDates;
+    }
+    if (!dbRoutine.id) {
+        delete dbRoutine.id;
+    }
+
     const { data, error } = await supabase
         .from('general_routines')
-        .insert([routine])
+        .insert([dbRoutine])
         .select()
         .single();
 
@@ -166,9 +240,17 @@ export async function createGeneralRoutine(routine: any) {
 }
 
 export async function updateGeneralRoutine(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+
+    if (dbUpdates.completedDates) {
+        dbUpdates.completed_dates = dbUpdates.completedDates;
+        delete dbUpdates.completedDates;
+    }
+    if (dbUpdates.userId) delete dbUpdates.userId;
+
     const { data, error } = await supabase
         .from('general_routines')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single();
