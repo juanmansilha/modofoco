@@ -36,7 +36,54 @@ export async function createTask(task: any) {
     return data;
 }
 
-// ... (getGoals omitted)
+export async function updateTask(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+
+    // Map camelCase to snake_case
+    if (dbUpdates.dueDate !== undefined) {
+        dbUpdates.due_date = dbUpdates.dueDate;
+        delete dbUpdates.dueDate;
+    }
+    // Handle empty date string
+    if (dbUpdates.due_date === "") dbUpdates.due_date = null;
+
+    if (dbUpdates.columnId !== undefined) {
+        dbUpdates.column_id = dbUpdates.columnId;
+        delete dbUpdates.columnId;
+    }
+
+    const { data, error } = await supabase
+        .from('tasks')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteTask(id: string) {
+    const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+// ============ GOALS ============
+
+export async function getGoals(userId: string) {
+    const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
 
 export async function createGoal(goal: any) {
     const dbGoal = { ...goal };
@@ -71,7 +118,54 @@ export async function createGoal(goal: any) {
     return data;
 }
 
-// ... (updateGoal omitted)
+export async function updateGoal(id: string, updates: any) {
+    const dbUpdates = { ...updates };
+
+    // Map camelCase
+    if (dbUpdates.targetDate) {
+        dbUpdates.target_date = dbUpdates.targetDate;
+        delete dbUpdates.targetDate;
+    }
+    // Handle empty date string
+    if (dbUpdates.target_date === "") dbUpdates.target_date = null;
+
+    if (dbUpdates.imageUrl) {
+        dbUpdates.image_url = dbUpdates.imageUrl;
+        delete dbUpdates.imageUrl;
+    }
+    if (dbUpdates.userId) delete dbUpdates.userId;
+
+    const { data, error } = await supabase
+        .from('goals')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteGoal(id: string) {
+    const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+// ============ STUDY SUBJECTS ============
+
+export async function getStudySubjects(userId: string) {
+    const { data, error } = await supabase
+        .from('study_subjects')
+        .select('*')
+        .eq('user_id', userId);
+
+    if (error) throw error;
+    return data || [];
+}
 
 export async function createStudySubject(subject: any) {
     const dbSubject = { ...subject };
@@ -125,10 +219,16 @@ export async function updateStudySubject(id: string, updates: any) {
         dbUpdates.last_studied = dbUpdates.lastStudied;
         delete dbUpdates.lastStudied;
     }
+    // Handle empty date string
+    if (dbUpdates.last_studied === "") dbUpdates.last_studied = null;
+
     if (dbUpdates.dueDate) {
         dbUpdates.due_date = dbUpdates.dueDate;
         delete dbUpdates.dueDate;
     }
+    // Handle empty date string
+    if (dbUpdates.due_date === "") dbUpdates.due_date = null;
+
     if (dbUpdates.userId) delete dbUpdates.userId;
 
     const { data, error } = await supabase
