@@ -36,6 +36,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         return <LoadingScreen />;
     }
 
+    // Don't render protected content if not authenticated
+    if (!isLoginPage && !userData.email) {
+        return <LoadingScreen />;
+    }
+
     const content = isLoginPage ? (
         <main className="min-h-screen bg-[#050505]">{children}</main>
     ) : (

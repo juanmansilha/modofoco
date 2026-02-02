@@ -9,31 +9,7 @@ import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 
 // Mock Data
-const INITIAL_ITEMS = [
-    {
-        id: "1",
-        type: "access",
-        title: "Netflix",
-        username: "juan@example.com",
-        password: "password123",
-        url: "https://netflix.com",
-        createdAt: new Date()
-    },
-    {
-        id: "2",
-        type: "idea",
-        title: "App de Corrida",
-        content: "Criar um app que gamifica a corrida com monstros virtuais.",
-        createdAt: new Date()
-    },
-    {
-        id: "3",
-        type: "note",
-        title: "Reunião Dr. Silva",
-        content: "Levar exames de sangue e ressonância magnética.",
-        createdAt: new Date()
-    }
-];
+const INITIAL_ITEMS: any[] = [];
 
 export default function VaultPage() {
     const { awardFP } = useGamification();

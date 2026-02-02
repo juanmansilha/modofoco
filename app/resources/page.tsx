@@ -9,9 +9,8 @@ import { useGlobalData } from "@/contexts/GlobalDataProvider";
 import { PageBanner } from "@/components/ui/PageBanner";
 
 const INITIAL_TYPES = [
-    { id: "area", label: "Área", color: "bg-blue-500", isCustom: false },
-    { id: "family", label: "Família", color: "bg-pink-500", isCustom: false },
     { id: "list", label: "Lista", color: "bg-emerald-500", isCustom: false },
+    { id: "area", label: "Área", color: "bg-blue-500", isCustom: false },
     { id: "other", label: "Outro", color: "bg-zinc-500", isCustom: false },
 ];
 
