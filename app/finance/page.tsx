@@ -284,7 +284,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
@@ -315,6 +315,24 @@ export default function FinancePage() {
                                 + {stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} pendente
                             </p>
                         )}
+                    </div>
+                    <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <span className="text-amber-400 text-sm">Pendentes</span>
+                        </div>
+                        <p className="text-2xl font-bold text-amber-400">
+                            {(stats.pendingIncome + stats.pendingExpense).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </p>
+                        <p className="text-xs text-amber-500/60 mt-1">
+                            {stats.pendingIncome > 0 && `↑ ${stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                            {stats.pendingIncome > 0 && stats.pendingExpense > 0 && ' • '}
+                            {stats.pendingExpense > 0 && `↓ ${stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                        </p>
                     </div>
                 </div>
 

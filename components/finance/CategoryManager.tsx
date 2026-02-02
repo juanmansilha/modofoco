@@ -19,11 +19,23 @@ interface CategoryManagerProps {
 }
 
 const COLORS = [
-    "bg-red-500", "bg-orange-500", "bg-amber-500", "bg-yellow-500",
-    "bg-lime-500", "bg-green-500", "bg-emerald-500", "bg-teal-500",
-    "bg-cyan-500", "bg-sky-500", "bg-blue-500", "bg-indigo-500",
-    "bg-violet-500", "bg-purple-500", "bg-fuchsia-500", "bg-pink-500",
-    "bg-rose-500"
+    { value: "bg-red-500", label: "vermelho" },
+    { value: "bg-orange-500", label: "laranja" },
+    { value: "bg-amber-500", label: "âmbar" },
+    { value: "bg-yellow-500", label: "amarelo" },
+    { value: "bg-lime-500", label: "lima" },
+    { value: "bg-green-500", label: "verde" },
+    { value: "bg-emerald-500", label: "esmeralda" },
+    { value: "bg-teal-500", label: "azul-petróleo" },
+    { value: "bg-cyan-500", label: "ciano" },
+    { value: "bg-sky-500", label: "céu" },
+    { value: "bg-blue-500", label: "azul" },
+    { value: "bg-indigo-500", label: "índigo" },
+    { value: "bg-violet-500", label: "violeta" },
+    { value: "bg-purple-500", label: "roxo" },
+    { value: "bg-fuchsia-500", label: "fúcsia" },
+    { value: "bg-pink-500", label: "rosa" },
+    { value: "bg-rose-500", label: "rosê" }
 ];
 
 export function CategoryManager({ isOpen, onClose, categories, onSave }: CategoryManagerProps) {
@@ -112,7 +124,7 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
                                 className="bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
                             >
                                 {COLORS.map(color => (
-                                    <option key={color} value={color}>{color.replace('bg-', '').replace('-500', '')}</option>
+                                    <option key={color.value} value={color.value}>{color.label}</option>
                                 ))}
                             </select>
                             <button
