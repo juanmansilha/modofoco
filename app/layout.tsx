@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 import { AppShell } from "@/components/layout/AppShell";
 import { IntroAnimation } from "@/components/layout/IntroAnimation";
 import { GlobalDataProvider } from "@/contexts/GlobalDataProvider";
+import "@/lib/clearMockData"; // Clear old mock data on app load
 
 export default function RootLayout({
   children,
