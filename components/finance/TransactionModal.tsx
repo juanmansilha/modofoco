@@ -19,6 +19,7 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, initialDat
     const [category, setCategory] = useState("other");
     const [accountId, setAccountId] = useState("");
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isConfirmed, setIsConfirmed] = useState(true);
 
     useEffect(() => {
         if (isOpen && initialData) {
@@ -27,12 +28,14 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, initialDat
             setType(initialData.type);
             setCategory(initialData.category);
             setAccountId(initialData.accountId);
+            setIsConfirmed(initialData.confirmed !== false);
             // setDate(new Date(initialData.date).toISOString().split('T')[0]);
         } else if (isOpen) {
             setDescription("");
             setAmount("");
             setType("expense");
             setCategory("other");
+            setIsConfirmed(true);
             if (accounts.length > 0) setAccountId(accounts[0].id);
             setDate(new Date().toISOString().split('T')[0]);
         }
@@ -46,7 +49,8 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, initialDat
             type,
             category,
             accountId,
-            date: new Date(date)
+            date: new Date(date),
+            confirmed: isConfirmed
         });
         onClose();
     };
@@ -150,14 +154,28 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, initialDat
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm text-zinc-400 mb-1">Data</label>
-                                <input
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                />
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm text-zinc-400 mb-1">Data</label>
+                                    <input
+                                        type="date"
+                                        value={date}
+                                        onChange={(e) => setDate(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    />
+                                </div>
+                                <div className="flex-1 flex flex-col justify-end pb-1">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={!isConfirmed}
+                                            onChange={(e) => setIsConfirmed(!e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                        <span className="ml-3 text-sm font-medium text-zinc-400">Pendente?</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <button

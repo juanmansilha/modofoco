@@ -175,6 +175,24 @@ export async function deleteFinanceCategory(id: string): Promise<void> {
     if (error) throw error;
 }
 
+export async function syncFinanceCategories(userId: string, categories: any[]): Promise<void> {
+    // Delete existing
+    await supabase.from('finance_categories').delete().eq('user_id', userId);
+
+    // Insert new
+    if (categories.length > 0) {
+        const toInsert = categories.map(cat => ({
+            user_id: userId,
+            name: cat.name,
+            type: cat.type,
+            color: cat.color,
+            icon: cat.icon
+        }));
+        const { error } = await supabase.from('finance_categories').insert(toInsert);
+        if (error) throw error;
+    }
+}
+
 // ============ BULK OPERATIONS ============
 
 export async function syncLocalToSupabase(

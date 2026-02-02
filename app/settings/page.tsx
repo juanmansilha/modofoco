@@ -11,7 +11,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
-    const { userData, updateUserData } = useGlobalData();
+    const { userData, updateUserData, logout } = useGlobalData();
     const { addNotification } = useNotifications();
     const router = useRouter();
 
@@ -64,9 +64,11 @@ export default function SettingsPage() {
         addNotification("Assinatura Ativa", "Obrigado por continuar no ModoFoco Pro!");
     };
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async () => {
         if (confirm("Tem certeza? Esta ação é irreversível e apagará todos os seus dados.")) {
-            localStorage.clear();
+            // Em um sistema real, aqui chamaríamos uma função para deletar os dados do usuário no Supabase
+            // Por enquanto, vamos apenas deslogar e limpar o estado
+            await logout();
             router.push("/login");
             addNotification("Conta Excluída", "Sentiremos sua falta.");
         }

@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { addDays, format } from "date-fns";
+import { supabase } from "@/lib/supabase";
+import * as SupabaseHealth from "@/lib/supabase-health";
+import * as SupabaseProductivity from "@/lib/supabase-productivity";
 
 // --- Types from NEW (Health/Gamification) ---
 
@@ -117,8 +120,6 @@ export interface Resource {
 }
 
 // --- Combined Context Type ---
-
-import { supabase } from "@/lib/supabase";
 
 // ... (Types)
 
@@ -249,50 +250,367 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     const [subjects, setSubjects] = useState<StudySubject[]>(INITIAL_SUBJECTS);
     const [resources, setResources] = useState<Resource[]>(INITIAL_RESOURCES);
 
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isLoadingData, setIsLoadingData] = useState(false);
+
+    // Get real user ID from Supabase
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+            }
+        };
+        fetchUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUserId(session?.user?.id || null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // Load ALL data from Supabase when userId is ready
+    useEffect(() => {
+        if (!userId) return;
+
+        const loadAllData = async () => {
+            setIsLoadingData(true);
+            try {
+                const [
+                    gym,
+                    run,
+                    meals,
+                    routines,
+                    sleep,
+                    fasting,
+                    taskData,
+                    goalData,
+                    subjectData,
+                    resourceData
+                ] = await Promise.all([
+                    SupabaseHealth.getGymSessions(userId),
+                    SupabaseHealth.getRunSessions(userId),
+                    SupabaseHealth.getMeals(userId),
+                    SupabaseHealth.getGeneralRoutines(userId),
+                    SupabaseHealth.getSleepLogs(userId),
+                    SupabaseHealth.getFastingState(userId),
+                    SupabaseProductivity.getTasks(userId),
+                    SupabaseProductivity.getGoals(userId),
+                    SupabaseProductivity.getStudySubjects(userId),
+                    SupabaseProductivity.getResources(userId)
+                ]);
+
+                setGymRoutines(gym);
+                setRunSessions(run);
+                setDietMeals(meals);
+                setGeneralRoutines(routines);
+                setSleepLogs(sleep);
+                if (fasting) {
+                    setFastingState({
+                        isActive: fasting.is_active,
+                        startTime: fasting.start_time ? new Date(fasting.start_time).getTime() : null,
+                        planId: fasting.plan_id,
+                        elapsedSeconds: 0
+                    });
+                }
+                setTasks(taskData.map(t => ({
+                    ...t,
+                    priority: t.priority as any,
+                    status: t.status as any,
+                    column: t.column_id
+                })));
+                setGoals(goalData);
+                setSubjects(subjectData);
+                setResources(resourceData);
+
+            } catch (error) {
+                console.error("Error loading global data from Supabase:", error);
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+
+        loadAllData();
+    }, [userId]);
+
     // --- Health Actions ---
 
-    const addGymRoutine = (r: GymSession) => setGymRoutines([...gymRoutines, r]);
-    const updateGymRoutine = (r: GymSession) => setGymRoutines(prev => prev.map(item => item.id === r.id ? r : item));
-    const deleteGymRoutine = (id: string) => setGymRoutines(prev => prev.filter(item => item.id !== id));
-    const toggleGymCompletion = (id: string) => {
-        setGymRoutines(prev => prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
+    const addGymRoutine = async (r: GymSession) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseHealth.createGymSession({ ...r, user_id: userId, id: undefined });
+            setGymRoutines([...gymRoutines, created]);
+        } catch (e) {
+            console.error("Error adding gym routine:", e);
+        }
     };
 
-    const addRunSession = (r: RunSession) => setRunSessions([...runSessions, r]);
-    const updateRunSession = (r: RunSession) => setRunSessions(prev => prev.map(item => item.id === r.id ? r : item));
-    const deleteRunSession = (id: string) => setRunSessions(prev => prev.filter(item => item.id !== id));
-    const toggleRunCompletion = (id: string) => {
-        setRunSessions(prev => prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r));
+    const updateGymRoutine = async (r: GymSession) => {
+        try {
+            const updated = await SupabaseHealth.updateGymSession(r.id, r);
+            setGymRoutines(prev => prev.map(item => item.id === r.id ? updated : item));
+        } catch (e) {
+            console.error("Error updating gym routine:", e);
+        }
     };
 
-    const addMeal = (m: Meal) => setDietMeals([...dietMeals, m]);
-    const updateMeal = (m: Meal) => setDietMeals(prev => prev.map(item => item.id === m.id ? m : item));
-    const deleteMeal = (id: string) => setDietMeals(prev => prev.filter(item => item.id !== id));
+    const deleteGymRoutine = async (id: string) => {
+        try {
+            await SupabaseHealth.deleteGymSession(id);
+            setGymRoutines(prev => prev.filter(item => item.id !== id));
+        } catch (e) {
+            console.error("Error deleting gym routine:", e);
+        }
+    };
 
-    const addGeneralRoutine = (r: GlobalRoutine) => setGeneralRoutines([...generalRoutines, r]);
-    const updateGeneralRoutine = (r: GlobalRoutine) => setGeneralRoutines(prev => prev.map(item => item.id === r.id ? r : item));
-    const deleteGeneralRoutine = (id: string) => setGeneralRoutines(prev => prev.filter(item => item.id !== id));
+    const toggleGymCompletion = async (id: string) => {
+        const routine = gymRoutines.find(r => r.id === id);
+        if (!routine) return;
+        try {
+            const updated = await SupabaseHealth.updateGymSession(id, { completed: !routine.completed });
+            setGymRoutines(prev => prev.map(r => r.id === id ? updated : r));
+        } catch (e) {
+            console.error("Error toggling gym completion:", e);
+        }
+    };
 
-    const updateFastingState = (state: FastingState) => setFastingState(state);
-    const addSleepLog = (log: SleepLog) => setSleepLogs([log, ...sleepLogs]);
+    const addRunSession = async (r: RunSession) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseHealth.createRunSession({ ...r, user_id: userId, id: undefined });
+            setRunSessions([...runSessions, created]);
+        } catch (e) {
+            console.error("Error adding run session:", e);
+        }
+    };
+
+    const updateRunSession = async (r: RunSession) => {
+        try {
+            const updated = await SupabaseHealth.updateRunSession(r.id, r);
+            setRunSessions(prev => prev.map(item => item.id === r.id ? updated : item));
+        } catch (e) {
+            console.error("Error updating run session:", e);
+        }
+    };
+
+    const deleteRunSession = async (id: string) => {
+        try {
+            await SupabaseHealth.deleteRunSession(id);
+            setRunSessions(prev => prev.filter(item => item.id !== id));
+        } catch (e) {
+            console.error("Error deleting run session:", e);
+        }
+    };
+
+    const toggleRunCompletion = async (id: string) => {
+        const run = runSessions.find(r => r.id === id);
+        if (!run) return;
+        try {
+            const updated = await SupabaseHealth.updateRunSession(id, { completed: !run.completed });
+            setRunSessions(prev => prev.map(r => r.id === id ? updated : r));
+        } catch (e) {
+            console.error("Error toggling run completion:", e);
+        }
+    };
+
+    const addMeal = async (m: Meal) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseHealth.createMeal({ ...m, user_id: userId, id: undefined });
+            setDietMeals([...dietMeals, created]);
+        } catch (e) {
+            console.error("Error adding meal:", e);
+        }
+    };
+
+    const updateMeal = async (m: Meal) => {
+        try {
+            const updated = await SupabaseHealth.updateMeal(m.id, m);
+            setDietMeals(prev => prev.map(item => item.id === m.id ? updated : item));
+        } catch (e) {
+            console.error("Error updating meal:", e);
+        }
+    };
+
+    const deleteMeal = async (id: string) => {
+        try {
+            await SupabaseHealth.deleteMeal(id);
+            setDietMeals(prev => prev.filter(item => item.id !== id));
+        } catch (e) {
+            console.error("Error deleting meal:", e);
+        }
+    };
+
+    const addGeneralRoutine = async (r: GlobalRoutine) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseHealth.createGeneralRoutine({ ...r, user_id: userId, id: undefined });
+            setGeneralRoutines([...generalRoutines, created]);
+        } catch (e) {
+            console.error("Error adding routine:", e);
+        }
+    };
+
+    const updateGeneralRoutine = async (r: GlobalRoutine) => {
+        try {
+            const updated = await SupabaseHealth.updateGeneralRoutine(r.id, r);
+            setGeneralRoutines(prev => prev.map(item => item.id === r.id ? updated : item));
+        } catch (e) {
+            console.error("Error updating routine:", e);
+        }
+    };
+
+    const deleteGeneralRoutine = async (id: string) => {
+        try {
+            await SupabaseHealth.deleteGeneralRoutine(id);
+            setGeneralRoutines(prev => prev.filter(item => item.id !== id));
+        } catch (e) {
+            console.error("Error deleting routine:", e);
+        }
+    };
+
+    const updateFastingState = async (state: FastingState) => {
+        if (!userId) return;
+        try {
+            await SupabaseHealth.updateFastingLog(userId, state);
+            setFastingState(state);
+        } catch (e) {
+            console.error("Error updating fasting state:", e);
+        }
+    };
+
+    const addSleepLog = async (log: SleepLog) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseHealth.createSleepLog({ ...log, user_id: userId, id: undefined });
+            setSleepLogs([created, ...sleepLogs]);
+        } catch (e) {
+            console.error("Error adding sleep log:", e);
+        }
+    };
 
     // --- Productivity Actions ---
 
-    const addTask = (task: Task) => setTasks([...tasks, task]);
-    const updateTask = (task: Task) => setTasks(tasks.map(t => t.id === task.id ? task : t));
-    const deleteTask = (id: string) => setTasks(tasks.filter(t => t.id !== id));
+    const addTask = async (task: Task) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseProductivity.createTask({
+                ...task,
+                user_id: userId,
+                id: undefined,
+                column_id: task.column
+            });
+            setTasks([...tasks, { ...created, column: created.column_id }]);
+        } catch (e) {
+            console.error("Error adding task:", e);
+        }
+    };
 
-    const addGoal = (goal: Goal) => setGoals([...goals, goal]);
-    const updateGoal = (goal: Goal) => setGoals(goals.map(g => g.id === goal.id ? goal : g));
-    const deleteGoal = (id: string) => setGoals(goals.filter(g => g.id !== id));
+    const updateTask = async (task: Task) => {
+        try {
+            const updated = await SupabaseProductivity.updateTask(task.id, {
+                ...task,
+                column_id: task.column
+            });
+            setTasks(tasks.map(t => t.id === task.id ? { ...updated, column: updated.column_id } : t));
+        } catch (e) {
+            console.error("Error updating task:", e);
+        }
+    };
 
-    const addSubject = (subject: StudySubject) => setSubjects([...subjects, subject]);
-    const updateSubject = (subject: StudySubject) => setSubjects(subjects.map(s => s.id === subject.id ? subject : s));
-    const deleteSubject = (id: string) => setSubjects(subjects.filter(s => s.id !== id));
+    const deleteTask = async (id: string) => {
+        try {
+            await SupabaseProductivity.deleteTask(id);
+            setTasks(tasks.filter(t => t.id !== id));
+        } catch (e) {
+            console.error("Error deleting task:", e);
+        }
+    };
 
-    const addResource = (resource: Resource) => setResources([...resources, resource]);
-    const updateResource = (resource: Resource) => setResources(resources.map(r => r.id === resource.id ? resource : r));
-    const deleteResource = (id: string) => setResources(resources.filter(r => r.id !== id));
+    const addGoal = async (goal: Goal) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseProductivity.createGoal({ ...goal, user_id: userId, id: undefined });
+            setGoals([...goals, created]);
+        } catch (e) {
+            console.error("Error adding goal:", e);
+        }
+    };
+
+    const updateGoal = async (goal: Goal) => {
+        try {
+            const updated = await SupabaseProductivity.updateGoal(goal.id, goal);
+            setGoals(goals.map(g => g.id === goal.id ? updated : g));
+        } catch (e) {
+            console.error("Error updating goal:", e);
+        }
+    };
+
+    const deleteGoal = async (id: string) => {
+        try {
+            await SupabaseProductivity.deleteGoal(id);
+            setGoals(goals.filter(g => g.id !== id));
+        } catch (e) {
+            console.error("Error deleting goal:", e);
+        }
+    };
+
+    const addSubject = async (subject: StudySubject) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseProductivity.createStudySubject({ ...subject, user_id: userId, id: undefined });
+            setSubjects([...subjects, created]);
+        } catch (e) {
+            console.error("Error adding subject:", e);
+        }
+    };
+
+    const updateSubject = async (subject: StudySubject) => {
+        try {
+            const updated = await SupabaseProductivity.updateStudySubject(subject.id, subject);
+            setSubjects(subjects.map(s => s.id === subject.id ? updated : s));
+        } catch (e) {
+            console.error("Error updating subject:", e);
+        }
+    };
+
+    const deleteSubject = async (id: string) => {
+        try {
+            await SupabaseProductivity.deleteStudySubject(id);
+            setSubjects(subjects.filter(s => s.id !== id));
+        } catch (e) {
+            console.error("Error deleting subject:", e);
+        }
+    };
+
+    const addResource = async (resource: Resource) => {
+        if (!userId) return;
+        try {
+            const created = await SupabaseProductivity.createResource({ ...resource, user_id: userId, id: undefined });
+            setResources([...resources, created]);
+        } catch (e) {
+            console.error("Error adding resource:", e);
+        }
+    };
+
+    const updateResource = async (resource: Resource) => {
+        try {
+            const updated = await SupabaseProductivity.updateResource(resource.id, resource);
+            setResources(resources.map(r => r.id === resource.id ? updated : r));
+        } catch (e) {
+            console.error("Error updating resource:", e);
+        }
+    };
+
+    const deleteResource = async (id: string) => {
+        try {
+            await SupabaseProductivity.deleteResource(id);
+            setResources(resources.filter(r => r.id !== id));
+        } catch (e) {
+            console.error("Error deleting resource:", e);
+        }
+    };
 
     // Unified Toggle Logic
     const toggleExternalTask = (source: 'goal' | 'subject' | 'resource', parentId: string, taskId: string) => {
@@ -300,7 +618,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     };
 
     // Generic Status Update (Support for DnD)
-    const updateTaskStatus = (source: 'native' | 'goal' | 'subject' | 'resource', parentId: string | undefined, taskId: string, newStatus: string) => {
+    const updateTaskStatus = async (source: 'native' | 'goal' | 'subject' | 'resource', parentId: string | undefined, taskId: string, newStatus: string) => {
 
         // Helper to determine boolean completion from status string
         const isCompleted = (status: string, currentCompleted: boolean) => {
@@ -311,55 +629,75 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         };
 
         if (source === 'native') {
-            setTasks(tasks.map(t => {
-                if (t.id === taskId) {
-                    const statusVal = newStatus === 'toggle'
-                        ? (t.status === 'done' ? 'todo' : 'done')
-                        : (newStatus as any);
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
 
-                    return {
-                        ...t,
-                        status: statusVal,
-                        column: newStatus === 'toggle' ? (t.column === 'done' ? 'todo' : 'done') : newStatus
-                    };
-                }
-                return t;
-            }));
+            const statusVal = newStatus === 'toggle'
+                ? (task.status === 'done' ? 'todo' : 'done')
+                : (newStatus as any);
+
+            const updatedTask = {
+                ...task,
+                status: statusVal,
+                column: newStatus === 'toggle' ? (task.column === 'done' ? 'todo' : 'done') : newStatus
+            };
+
+            setTasks(tasks.map(t => t.id === taskId ? updatedTask : t));
+
+            try {
+                await SupabaseProductivity.updateTask(taskId, {
+                    status: updatedTask.status,
+                    column_id: updatedTask.column
+                });
+            } catch (e) {
+                console.error("Error updating native task status:", e);
+            }
             return;
         }
 
         if (!parentId) return;
 
         if (source === 'goal') {
-            setGoals(goals.map(g => {
-                if (g.id === parentId) {
-                    return {
-                        ...g,
-                        tasks: g.tasks.map(t => t.id === taskId ? { ...t, completed: isCompleted(newStatus, t.completed) } : t)
-                    };
-                }
-                return g;
-            }));
+            const goal = goals.find(g => g.id === parentId);
+            if (!goal) return;
+
+            const updatedTasks = goal.tasks.map(t => t.id === taskId ? { ...t, completed: isCompleted(newStatus, t.completed) } : t);
+            const updatedGoal = { ...goal, tasks: updatedTasks };
+
+            setGoals(goals.map(g => g.id === parentId ? updatedGoal : g));
+            try {
+                await SupabaseProductivity.updateGoal(parentId, { tasks: updatedTasks });
+            } catch (e) {
+                console.error("Error updating goal task status:", e);
+            }
         } else if (source === 'subject') {
-            setSubjects(subjects.map(s => {
-                if (s.id === parentId) {
-                    const updatedTasks = s.tasks.map(t => t.id === taskId ? { ...t, completed: isCompleted(newStatus, t.completed) } : t);
-                    const completed = updatedTasks.filter(t => t.completed).length;
-                    const progress = Math.round((completed / updatedTasks.length) * 100);
-                    return { ...s, tasks: updatedTasks, progress };
-                }
-                return s;
-            }));
+            const subject = subjects.find(s => s.id === parentId);
+            if (!subject) return;
+
+            const updatedTasks = subject.tasks.map(t => t.id === taskId ? { ...t, completed: isCompleted(newStatus, t.completed) } : t);
+            const completedCount = updatedTasks.filter(t => t.completed).length;
+            const progress = updatedTasks.length > 0 ? Math.round((completedCount / updatedTasks.length) * 100) : 0;
+            const updatedSubject = { ...subject, tasks: updatedTasks, progress };
+
+            setSubjects(subjects.map(s => s.id === parentId ? updatedSubject : s));
+            try {
+                await SupabaseProductivity.updateStudySubject(parentId, { tasks: updatedTasks, progress });
+            } catch (e) {
+                console.error("Error updating subject task status:", e);
+            }
         } else if (source === 'resource') {
-            setResources(resources.map(r => {
-                if (r.id === parentId) {
-                    return {
-                        ...r,
-                        tasks: r.tasks.map(t => t.id === taskId ? { ...t, completed: isCompleted(newStatus, t.completed) } : t)
-                    };
-                }
-                return r;
-            }));
+            const resource = resources.find(r => r.id === parentId);
+            if (!resource) return;
+
+            const updatedTasks = resource.tasks.map(t => t.id === taskId ? { ...t, completed: isCompleted(newStatus, t.completed) } : t);
+            const updatedResource = { ...resource, tasks: updatedTasks };
+
+            setResources(resources.map(r => r.id === parentId ? updatedResource : r));
+            try {
+                await SupabaseProductivity.updateResource(parentId, { tasks: updatedTasks });
+            } catch (e) {
+                console.error("Error updating resource task status:", e);
+            }
         }
     };
 
@@ -453,59 +791,33 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     });
     const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-    // Supabase Auth Integration
+    // Supabase Auth & Profile Integration
     useEffect(() => {
-        // Check active session
+        const loadProfile = async (uid: string) => {
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+            if (data && !error) {
+                setUserData({
+                    name: data.name || "",
+                    email: data.email || "",
+                    whatsapp: data.whatsapp || "",
+                    photo: data.photo || null,
+                    onboardingCompleted: data.onboarding_completed || false,
+                    focus: data.focus || [],
+                    discovery: data.discovery || ""
+                });
+            }
+        };
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-                // Load user data from localStorage or use session data
-                const savedUser = localStorage.getItem("mf_user_data");
-                if (savedUser) {
-                    const parsed = JSON.parse(savedUser);
-                    setUserData({ ...parsed, email: session.user.email || parsed.email });
-                } else {
-                    // Use metadata from Supabase
-                    const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "";
-                    const newUserData = {
-                        name,
-                        email: session.user.email || "",
-                        whatsapp: "",
-                        photo: null,
-                        onboardingCompleted: false
-                    };
-                    setUserData(newUserData);
-                    localStorage.setItem("mf_user_data", JSON.stringify(newUserData));
-                }
-            } else {
-                // No session
-                const savedUser = localStorage.getItem("mf_user_data");
-                if (savedUser) {
-                    setUserData(JSON.parse(savedUser));
-                }
+                loadProfile(session.user.id);
             }
             setIsAuthLoading(false);
         });
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session) {
-                const savedUser = localStorage.getItem("mf_user_data");
-                if (savedUser) {
-                    const parsed = JSON.parse(savedUser);
-                    setUserData({ ...parsed, email: session.user.email || parsed.email });
-                } else {
-                    const name = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || "";
-                    const newUserData = {
-                        name,
-                        email: session.user.email || "",
-                        whatsapp: "",
-                        photo: null,
-                        onboardingCompleted: false
-                    };
-                    setUserData(newUserData);
-                    localStorage.setItem("mf_user_data", JSON.stringify(newUserData));
-                }
+                loadProfile(session.user.id);
             } else {
                 setUserData({ name: "", email: "", whatsapp: "", photo: null, onboardingCompleted: false });
             }
@@ -514,12 +826,33 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         return () => subscription.unsubscribe();
     }, []);
 
-    const updateUserData = (data: Partial<UserData>) => {
-        setUserData(prev => {
-            const newState = { ...prev, ...data };
-            localStorage.setItem("mf_user_data", JSON.stringify(newState));
-            return newState;
-        });
+    const updateUserData = async (data: Partial<UserData>) => {
+        if (!userId) {
+            // Fallback for onboarding before auth is fully ready if needed, 
+            // but usually we have a session by now
+            setUserData(prev => ({ ...prev, ...data }));
+            return;
+        }
+
+        try {
+            const updates = {
+                name: data.name,
+                whatsapp: data.whatsapp,
+                photo: data.photo,
+                focus: data.focus,
+                discovery: data.discovery,
+                onboarding_completed: data.onboardingCompleted,
+                updated_at: new Date()
+            };
+
+            // Remove undefined fields
+            Object.keys(updates).forEach(key => (updates as any)[key] === undefined && delete (updates as any)[key]);
+
+            await supabase.from('profiles').update(updates).eq('id', userId);
+            setUserData(prev => ({ ...prev, ...data }));
+        } catch (e) {
+            console.error("Error updating user profile:", e);
+        }
     };
 
     const login = async (email: string, pass: string) => {
@@ -536,14 +869,21 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             }
         });
         if (error) throw error;
-        // Also update local user data temporarily
-        updateUserData({ name, email });
     };
 
     const logout = async () => {
-        await supabase.auth.signOut();
-        localStorage.clear();
-        setUserData({ name: "", onboardingCompleted: false });
+        try {
+            await supabase.auth.signOut();
+            setUserData({ name: "", email: "", onboardingCompleted: false });
+            // Clear all local states
+            setGymRoutines([]);
+            setRunSessions([]);
+            setDietMeals([]);
+            setTasks([]);
+            setGoals([]);
+        } catch (e) {
+            console.error("Error during logout:", e);
+        }
     };
 
     return (

@@ -21,6 +21,8 @@ import {
     Home
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { supabase } from "@/lib/supabase";
+import * as SupabaseFinance from "@/lib/supabase-finance";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
 import { useGamification } from "@/contexts/GamificationContext";
 import { motion } from "framer-motion";
@@ -45,19 +47,30 @@ export default function DashboardPage() {
     } = useGlobalData();
     const { level, progress } = useGamification();
 
-    // Financial Data (read from localStorage or default to 0)
+    // Financial Data
     const [financialData, setFinancialData] = useState({ balance: 0, expenses: 0, income: 0 });
+    const [userId, setUserId] = useState<string | null>(null);
+
+    // Get user ID from Supabase auth
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+            }
+        };
+        getUser();
+    }, []);
 
     useEffect(() => {
-        // This would ideally come from a shared context or API
-        // For now, we'll calculate from localStorage if finance page saves data there
-        const savedAccounts = localStorage.getItem('mf_finance_accounts');
-        const savedTransactions = localStorage.getItem('mf_finance_transactions');
+        if (!userId) return;
 
-        if (savedAccounts && savedTransactions) {
+        const loadFinanceData = async () => {
             try {
-                const accounts = JSON.parse(savedAccounts);
-                const transactions = JSON.parse(savedTransactions);
+                const [accounts, transactions] = await Promise.all([
+                    SupabaseFinance.getFinanceAccounts(userId),
+                    SupabaseFinance.getFinanceTransactions(userId)
+                ]);
 
                 const totalBalance = accounts.reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
 
@@ -65,7 +78,8 @@ export default function DashboardPage() {
                 const monthTransactions = transactions.filter((t: any) => {
                     const tDate = new Date(t.date);
                     return tDate.getMonth() === currentMonth.getMonth() &&
-                        tDate.getFullYear() === currentMonth.getFullYear();
+                        tDate.getFullYear() === currentMonth.getFullYear() &&
+                        t.confirmed !== false; // Only confirmed for main stats
                 });
 
                 const expenses = monthTransactions
@@ -78,10 +92,12 @@ export default function DashboardPage() {
 
                 setFinancialData({ balance: totalBalance, expenses, income });
             } catch (e) {
-                console.error('Error loading financial data:', e);
+                console.error('Error loading financial data from Supabase:', e);
             }
-        }
-    }, []);
+        };
+
+        loadFinanceData();
+    }, [userId]);
 
     // Greeting
     const [greeting, setGreeting] = useState("Bem-vindo");

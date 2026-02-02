@@ -14,11 +14,20 @@ import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
+import * as SupabaseFinance from "@/lib/supabase-finance";
+import { supabase } from "@/lib/supabase";
 
 // Mock Data Intializers
 const INITIAL_ACCOUNTS: any[] = [];
 
-const INITIAL_TRANSACTIONS: any[] = [];
+const INITIAL_CATEGORIES = [
+    { id: "1", name: "Salário", type: "income" as const, color: "bg-emerald-500" },
+    { id: "2", name: "Freelance", type: "income" as const, color: "bg-green-500" },
+    { id: "3", name: "Alimentação", type: "expense" as const, color: "bg-orange-500" },
+    { id: "4", name: "Transporte", type: "expense" as const, color: "bg-blue-500" },
+    { id: "5", name: "Moradia", type: "expense" as const, color: "bg-purple-500" },
+    { id: "6", name: "Lazer", type: "expense" as const, color: "bg-pink-500" },
+];
 
 export default function FinancePage() {
     const { awardFP } = useGamification();
@@ -26,26 +35,42 @@ export default function FinancePage() {
     const [accounts, setAccounts] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [userId, setUserId] = useState<string | null>(null);
 
-    // Load from localStorage on mount
+    // Get user ID from Supabase auth
     useEffect(() => {
-        const loadData = () => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+            }
+        };
+        getUser();
+    }, []);
+
+    // Load from Supabase on mount
+    useEffect(() => {
+        if (!userId) return;
+
+        const loadData = async () => {
             try {
                 setIsLoading(true);
-                const savedAccounts = localStorage.getItem('mf_finance_accounts');
-                const savedTransactions = localStorage.getItem('mf_finance_transactions');
-                const savedCategories = localStorage.getItem('mf_finance_categories');
+                const [accountsData, transactionsData, categoriesData] = await Promise.all([
+                    SupabaseFinance.getFinanceAccounts(userId),
+                    SupabaseFinance.getFinanceTransactions(userId),
+                    SupabaseFinance.getFinanceCategories(userId)
+                ]);
 
-                if (savedAccounts) {
-                    setAccounts(JSON.parse(savedAccounts));
-                }
+                setAccounts(accountsData);
+                setTransactions(transactionsData);
 
-                if (savedTransactions) {
-                    setTransactions(JSON.parse(savedTransactions));
-                }
-
-                if (savedCategories) {
-                    setCategories(JSON.parse(savedCategories));
+                if (categoriesData.length > 0) {
+                    setCategories(categoriesData.map(cat => ({
+                        id: cat.id,
+                        name: cat.name,
+                        type: cat.type as "income" | "expense",
+                        color: cat.color || 'bg-blue-500'
+                    })));
                 }
             } catch (error) {
                 console.error('Error loading finance data:', error);
@@ -55,20 +80,7 @@ export default function FinancePage() {
         };
 
         loadData();
-    }, []);
-
-    // Save to localStorage whenever data changes
-    useEffect(() => {
-        if (accounts.length > 0) {
-            localStorage.setItem('mf_finance_accounts', JSON.stringify(accounts));
-        }
-    }, [accounts]);
-
-    useEffect(() => {
-        if (transactions.length > 0) {
-            localStorage.setItem('mf_finance_transactions', JSON.stringify(transactions));
-        }
-    }, [transactions]);
+    }, [userId]);
 
 
     // Helpers
@@ -83,30 +95,18 @@ export default function FinancePage() {
     const [editingTransaction, setEditingTransaction] = useState<any>(null);
 
     // Categories State
-    const [categories, setCategories] = useState<any[]>([
-        { id: "1", name: "Salário", type: "income", color: "bg-emerald-500" },
-        { id: "2", name: "Freelance", type: "income", color: "bg-blue-500" },
-        { id: "3", name: "Alimentação", type: "expense", color: "bg-orange-500" },
-        { id: "4", name: "Transporte", type: "expense", color: "bg-cyan-500" },
-        { id: "5", name: "Moradia", type: "expense", color: "bg-purple-500" },
-    ]);
+    const [categories, setCategories] = useState<any[]>([]);
 
-    // Save categories to localStorage
-    useEffect(() => {
-        localStorage.setItem('mf_finance_categories', JSON.stringify(categories));
-    }, [categories]);
-
-    // Load categories from localStorage on mount
-    useEffect(() => {
-        const saved = localStorage.getItem('mf_finance_categories');
-        if (saved) {
-            try {
-                setCategories(JSON.parse(saved));
-            } catch (e) {
-                console.error('Error loading categories:', e);
-            }
+    const handleSaveCategories = async (newCategories: any[]) => {
+        if (!userId) return;
+        try {
+            // Simple sync: delete all and insert new ones
+            await SupabaseFinance.syncFinanceCategories(userId, newCategories);
+            setCategories(newCategories);
+        } catch (error) {
+            console.error('Error syncing categories:', error);
         }
-    }, []);
+    };
 
     // --- Logic ---
 
@@ -172,79 +172,92 @@ export default function FinancePage() {
 
     // --- CRUD Handlers ---
 
-    const handleSaveAccount = (account: any) => {
-        if (editingAccount) {
-            setAccounts(accounts.map(a => a.id === editingAccount.id ? { ...account, id: a.id } : a));
-        } else {
-            setAccounts([...accounts, { ...account, id: Math.random().toString(36).substr(2, 9) }]);
+    const handleSaveAccount = async (account: any) => {
+        if (!userId) return;
+        try {
+            if (editingAccount) {
+                const updated = await SupabaseFinance.updateFinanceAccount(editingAccount.id, {
+                    ...account,
+                    user_id: userId
+                });
+                setAccounts(accounts.map(a => a.id === editingAccount.id ? updated : a));
+            } else {
+                const created = await SupabaseFinance.createFinanceAccount({
+                    ...account,
+                    user_id: userId
+                });
+                setAccounts([created, ...accounts]);
+            }
+        } catch (error) {
+            console.error('Error saving account:', error);
         }
         setEditingAccount(null);
     };
 
-    const handleDeleteAccount = (id: string) => {
-        if (confirm("Tem certeza? Transações vinculadas não serão excluídas logicamente, mas perderão a referência visual.")) {
+    const handleDeleteAccount = async (id: string) => {
+        if (!confirm("Tem certeza? Transações vinculadas serão excluídas.")) return;
+        try {
+            await SupabaseFinance.deleteFinanceAccount(id);
             setAccounts(accounts.filter(a => a.id !== id));
+        } catch (error) {
+            console.error('Error deleting account:', error);
         }
     };
 
-    const handleSaveTransaction = (transaction: any) => {
-        let newTransactions = [...transactions];
-        let amountDiff = 0; // For balance update
-        const isExpense = transaction.type === "expense";
-        const val = isExpense ? -transaction.amount : transaction.amount;
-
-        if (editingTransaction) {
-            // Revert old transaction effect on balance first
-            const oldIsExpense = editingTransaction.type === "expense";
-            const oldVal = oldIsExpense ? -editingTransaction.amount : editingTransaction.amount;
-
-            // Logic to update balance only if account didn't change (simplification for MVP)
-            // If account changed, we would need to update two accounts. keeping simple.
-            if (transaction.accountId === editingTransaction.accountId) {
-                amountDiff = val - oldVal;
+    const handleSaveTransaction = async (transactionData: any) => {
+        if (!userId) return;
+        try {
+            if (editingTransaction) {
+                const updated = await SupabaseFinance.updateFinanceTransaction(editingTransaction.id, {
+                    ...transactionData,
+                    user_id: userId
+                });
+                setTransactions(transactions.map(t => t.id === editingTransaction.id ? updated : t));
+            } else {
+                const created = await SupabaseFinance.createFinanceTransaction({
+                    ...transactionData,
+                    user_id: userId
+                });
+                setTransactions([created, ...transactions]);
+                awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Movimentação Financeira");
             }
 
-            newTransactions = transactions.map(t => t.id === editingTransaction.id ? { ...transaction, id: t.id } : t);
-        } else {
-            newTransactions = [{ ...transaction, id: Math.random().toString(36).substr(2, 9) }, ...transactions];
-            amountDiff = val;
-            awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Movimentação Financeira");
+            // Refresh accounts to reflect balance changes
+            const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
+            setAccounts(updatedAccounts);
+        } catch (error) {
+            console.error('Error saving transaction:', error);
         }
-
-        setTransactions(newTransactions);
-
-        // Update Account Balance
-        setAccounts(accounts.map(acc => {
-            if (acc.id === transaction.accountId) {
-                return { ...acc, balance: acc.balance + amountDiff };
-            }
-            return acc;
-        }));
-
         setEditingTransaction(null);
     };
 
-    const handleDeleteTransaction = (id: string) => {
-        const transaction = transactions.find(t => t.id === id);
-        if (transaction && confirm("Excluir esta transação?")) {
-            // Revert balance
-            const isExpense = transaction.type === "expense";
-            const val = isExpense ? -transaction.amount : transaction.amount;
-
-            setAccounts(accounts.map(acc => {
-                if (acc.id === transaction.accountId) {
-                    return { ...acc, balance: acc.balance - val };
-                }
-                return acc;
-            }));
+    const handleDeleteTransaction = async (id: string) => {
+        if (!userId) return;
+        if (!confirm("Excluir esta transação?")) return;
+        try {
+            await SupabaseFinance.deleteFinanceTransaction(id);
             setTransactions(transactions.filter(t => t.id !== id));
+
+            // Refresh accounts
+            const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
+            setAccounts(updatedAccounts);
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
         }
     };
 
-    const handleConfirmTransaction = (id: string) => {
-        setTransactions(transactions.map(t =>
-            t.id === id ? { ...t, confirmed: true } : t
-        ));
+    const handleConfirmTransaction = async (id: string) => {
+        if (!userId) return;
+        try {
+            const updated = await SupabaseFinance.confirmTransaction(id);
+            setTransactions(transactions.map(t => t.id === id ? updated : t));
+
+            // Refresh accounts
+            const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
+            setAccounts(updatedAccounts);
+        } catch (error) {
+            console.error('Error confirming transaction:', error);
+        }
     };
 
     return (
@@ -423,7 +436,7 @@ export default function FinancePage() {
                 isOpen={isCategoryManagerOpen}
                 onClose={() => setIsCategoryManagerOpen(false)}
                 categories={categories}
-                onSave={setCategories}
+                onSave={handleSaveCategories}
             />
         </div>
     );
