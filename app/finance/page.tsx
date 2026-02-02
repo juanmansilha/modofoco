@@ -13,7 +13,9 @@ import { FinanceChart } from "@/components/finance/FinanceChart";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
+import { useGlobalData } from "@/contexts/GlobalDataProvider";
 import { FOCO_POINTS } from "@/lib/gamification";
+import * as SupabaseFinance from "@/lib/supabase-finance";
 
 // Mock Data Intializers
 const INITIAL_ACCOUNTS: any[] = [];
@@ -22,44 +24,48 @@ const INITIAL_TRANSACTIONS: any[] = [];
 
 export default function FinancePage() {
     const { awardFP } = useGamification();
+    const { userData } = useGlobalData();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [accounts, setAccounts] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Load from localStorage on mount
+    // Load from Supabase on mount
     useEffect(() => {
-        const savedAccounts = localStorage.getItem('mf_finance_accounts');
-        const savedTransactions = localStorage.getItem('mf_finance_transactions');
+        if (!userData?.id) return;
 
-        if (savedAccounts) {
+        const loadData = async () => {
             try {
-                setAccounts(JSON.parse(savedAccounts));
-            } catch (e) {
-                console.error('Error loading accounts:', e);
-            }
-        }
+                setIsLoading(true);
+                const [accountsData, transactionsData, categoriesData] = await Promise.all([
+                    SupabaseFinance.getFinanceAccounts(userData.id),
+                    SupabaseFinance.getFinanceTransactions(userData.id),
+                    SupabaseFinance.getFinanceCategories(userData.id)
+                ]);
 
-        if (savedTransactions) {
-            try {
-                setTransactions(JSON.parse(savedTransactions));
-            } catch (e) {
-                console.error('Error loading transactions:', e);
+                setAccounts(accountsData);
+                setTransactions(transactionsData);
+
+                if (categoriesData.length > 0) {
+                    setCategories(categoriesData.map(cat => ({
+                        id: cat.id,
+                        name: cat.name,
+                        type: cat.type,
+                        color: cat.color || 'bg-blue-500'
+                    })));
+                }
+            } catch (error) {
+                console.error('Error loading finance data:', error);
+            } finally {
+                setIsLoading(false);
             }
-        }
-    }, []);
+        };
+
+        loadData();
+    }, [userData?.id]);
 
     // Save to localStorage whenever accounts or transactions change
-    useEffect(() => {
-        if (accounts.length > 0) {
-            localStorage.setItem('mf_finance_accounts', JSON.stringify(accounts));
-        }
-    }, [accounts]);
 
-    useEffect(() => {
-        if (transactions.length > 0) {
-            localStorage.setItem('mf_finance_transactions', JSON.stringify(transactions));
-        }
-    }, [transactions]);
 
     // Helpers
     const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
