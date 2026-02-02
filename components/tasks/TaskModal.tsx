@@ -48,7 +48,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, mode }: TaskMo
                 setPriority(initialData.priority || "medium");
                 setStatus(initialData.status || "todo");
                 setSubtasks(initialData.subtasks || []);
-                setDueDate(initialData.dueDate || "");
+                setDueDate(initialData.dueDate || (initialData as any).due_date || "");
             } else {
                 // Reset defaults
                 setTitle("");
@@ -159,8 +159,8 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, mode }: TaskMo
                                                     disabled={isReadOnly}
                                                     onClick={() => setPriority(p)}
                                                     className={`flex-1 py-1.5 text-xs font-bold uppercase rounded-lg transition-colors ${priority === p
-                                                            ? (p === 'high' ? "bg-red-500 text-white" : p === 'medium' ? "bg-yellow-500 text-black" : "bg-blue-500 text-white")
-                                                            : "text-zinc-500 hover:text-white"
+                                                        ? (p === 'high' ? "bg-red-500 text-white" : p === 'medium' ? "bg-yellow-500 text-black" : "bg-blue-500 text-white")
+                                                        : "text-zinc-500 hover:text-white"
                                                         } ${isReadOnly ? "opacity-100 cursor-default" : ""}`}
                                                 >
                                                     {p === 'high' ? 'Alta' : p === 'medium' ? 'Média' : 'Baixa'}
