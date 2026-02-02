@@ -15,5 +15,10 @@ export function IntroAnimation({ children }: { children: React.ReactNode }) {
         return () => clearTimeout(timer);
     }, []);
 
-    );
+    if (isLoading) {
+        return <LoadingScreen />;
+    }
+
+    return <>{children}</>;
+}
 }
