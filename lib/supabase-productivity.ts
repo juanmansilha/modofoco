@@ -86,29 +86,21 @@ export async function getGoals(userId: string) {
 }
 
 export async function createGoal(goal: any) {
-    const dbGoal = { ...goal };
+    // Explicit mapping to avoid any ambiguity or leakage of camelCase properties
+    const dbGoal: any = {
+        user_id: goal.userId || goal.user_id,
+        title: goal.title,
+        description: goal.description,
+        status: goal.status || 'in_progress',
+        tasks: goal.tasks || [],
+        target_date: goal.targetDate || goal.target_date || null,
+        image_url: goal.imageUrl || goal.image_url || null
+    };
 
-    // Map camelCase
-    if (dbGoal.targetDate) {
-        dbGoal.target_date = dbGoal.targetDate;
-        delete dbGoal.targetDate;
-    }
-    // Handle empty date string
-    if (dbGoal.target_date === "") dbGoal.target_date = null;
+    // Remove any undefined keys to allow DB defaults if needed (though we set defaults above)
+    // but we handled most common ones.
 
-    if (dbGoal.imageUrl) {
-        dbGoal.image_url = dbGoal.imageUrl;
-        delete dbGoal.imageUrl;
-    }
-    if (dbGoal.userId) {
-        dbGoal.user_id = dbGoal.userId;
-        delete dbGoal.userId;
-    }
-    if (!dbGoal.id) {
-        delete dbGoal.id;
-    }
-
-    console.log("Saving Goal:", dbGoal); // Debug logging
+    console.log("Saving Goal (Sanitized):", dbGoal);
 
     const { data, error } = await supabase
         .from('goals')
@@ -116,26 +108,33 @@ export async function createGoal(goal: any) {
         .select()
         .single();
 
-    if (error) throw error;
+    if (error) {
+        console.error("Supabase Create Goal Error:", error);
+        throw error;
+    }
     return data;
 }
 
 export async function updateGoal(id: string, updates: any) {
-    const dbUpdates = { ...updates };
+    const dbUpdates: any = {};
 
-    // Map camelCase
-    if (dbUpdates.targetDate) {
-        dbUpdates.target_date = dbUpdates.targetDate;
-        delete dbUpdates.targetDate;
-    }
-    // Handle empty date string
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.tasks !== undefined) dbUpdates.tasks = updates.tasks;
+
+    // Explicit date handling
+    if (updates.targetDate !== undefined) dbUpdates.target_date = updates.targetDate;
+    if (updates.target_date !== undefined) dbUpdates.target_date = updates.target_date;
+
+    // Explicit image handling
+    if (updates.imageUrl !== undefined) dbUpdates.image_url = updates.imageUrl;
+    if (updates.image_url !== undefined) dbUpdates.image_url = updates.image_url;
+
+    // Handle empty strings converting to null
     if (dbUpdates.target_date === "") dbUpdates.target_date = null;
 
-    if (dbUpdates.imageUrl) {
-        dbUpdates.image_url = dbUpdates.imageUrl;
-        delete dbUpdates.imageUrl;
-    }
-    if (dbUpdates.userId) delete dbUpdates.userId;
+    console.log("Updating Goal (Sanitized):", dbUpdates);
 
     const { data, error } = await supabase
         .from('goals')
@@ -144,7 +143,10 @@ export async function updateGoal(id: string, updates: any) {
         .select()
         .single();
 
-    if (error) throw error;
+    if (error) {
+        console.error("Supabase Update Goal Error:", error);
+        throw error;
+    }
     return data;
 }
 

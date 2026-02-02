@@ -19,17 +19,23 @@ export default function GoalsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState<any>(null);
 
-    const handleSave = (goal: any) => {
-        if (editingGoal) {
-            updateGoal({ ...goal, id: editingGoal.id });
-            if (goal.status === "completed" && editingGoal.status !== "completed") {
-                awardFP(FOCO_POINTS.COMPLETE_GOAL, "Meta Concluída");
+    const handleSave = async (goal: any) => {
+        try {
+            if (editingGoal) {
+                await updateGoal({ ...goal, id: editingGoal.id });
+                if (goal.status === "completed" && editingGoal.status !== "completed") {
+                    awardFP(FOCO_POINTS.COMPLETE_GOAL, "Meta Concluída");
+                }
+            } else {
+                await addGoal({ ...goal, id: Math.random().toString(36).substr(2, 9), tasks: goal.tasks || [] });
+                awardFP(FOCO_POINTS.COMPLETE_TASK, "Nova Meta Definida!");
             }
-        } else {
-            addGoal({ ...goal, id: Math.random().toString(36).substr(2, 9), tasks: goal.tasks || [] });
+            setIsModalOpen(false);
+            setEditingGoal(null);
+        } catch (error: any) {
+            console.error('Error saving goal:', error);
+            alert(`Erro ao salvar meta: ${error.message || "Tente novamente mais tarde."}`);
         }
-        setIsModalOpen(false);
-        setEditingGoal(null);
     };
 
     const handleDelete = (id: string) => {
