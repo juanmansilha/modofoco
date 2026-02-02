@@ -11,7 +11,7 @@ import { TransactionList } from "@/components/finance/TransactionList";
 import { TransactionModal } from "@/components/finance/TransactionModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { PageBanner } from "@/components/ui/PageBanner";
-import { CategoryManager } => "@/components/finance/CategoryManager";
+import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 
