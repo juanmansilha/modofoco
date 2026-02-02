@@ -49,7 +49,7 @@ export function GoalModal({ isOpen, onClose, onSave, initialData }: GoalModalPro
         onSave({
             title,
             description,
-            targetDate: new Date(targetDate),
+            targetDate, // Pass as string (YYYY-MM-DD)
             imageUrl,
             status,
             tasks
@@ -176,6 +176,10 @@ export function GoalModal({ isOpen, onClose, onSave, initialData }: GoalModalPro
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
+                                                        if (file.size > 3 * 1024 * 1024) {
+                                                            alert("A imagem deve ser menor que 3MB.");
+                                                            return;
+                                                        }
                                                         const reader = new FileReader();
                                                         reader.onloadend = () => {
                                                             setImageUrl(reader.result as string);
