@@ -48,7 +48,8 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, mode }: TaskMo
                 setPriority(initialData.priority || "medium");
                 setStatus(initialData.status || "todo");
                 setSubtasks(initialData.subtasks || []);
-                setDueDate(initialData.dueDate || (initialData as any).due_date || "");
+                const rawDate = initialData.dueDate || (initialData as any).due_date || "";
+                setDueDate(rawDate ? rawDate.split('T')[0] : "");
             } else {
                 // Reset defaults
                 setTitle("");
