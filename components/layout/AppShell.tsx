@@ -1,19 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { BottomNav } from "@/components/layout/BottomNav"; // Import
 import { cn } from "@/lib/utils";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { GamificationProvider } from "@/contexts/GamificationContext";
+import { useGlobalData } from "@/contexts/GlobalDataProvider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile Menu State
     const pathname = usePathname();
+    const router = useRouter();
+    const { userData } = useGlobalData();
     const isLoginPage = pathname === "/login" || pathname === "/onboarding";
+
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (!isLoginPage && !userData.email) {
+            router.push("/login");
+        }
+    }, [userData.email, isLoginPage, router]);
 
     // Close mobile menu on route change
     useEffect(() => {

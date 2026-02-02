@@ -208,41 +208,13 @@ const GlobalDataContext = createContext<GlobalDataContextType | undefined>(undef
 
 // --- Initial Data ---
 
-const INITIAL_GYM: GymSession[] = [
-    {
-        id: "gym-1",
-        name: "Treino A",
-        focus: "Peito e Tríceps",
-        duration: "50 min",
-        time: "07:00",
-        date: format(new Date(), "yyyy-MM-dd"),
-        exercises: [],
-        completed: false
-    }
-];
+const INITIAL_GYM: GymSession[] = [];
 
-const INITIAL_RUN: RunSession[] = [
-    { id: "run-1", title: "5km Matinal", date: format(new Date(), "yyyy-MM-dd"), time: "06:00", duration: "30:00", dist: 5, calories: 350, completed: false }
-];
+const INITIAL_RUN: RunSession[] = [];
 
-const INITIAL_DIET: Meal[] = [
-    { id: "meal-1", type: "breakfast", name: "Ovos e Café", time: "08:00", date: format(new Date(), "yyyy-MM-dd"), recurrence: ["mon", "tue", "wed", "thu", "fri"] },
-    { id: "meal-2", type: "lunch", name: "Frango e Salada", time: "12:30", date: format(new Date(), "yyyy-MM-dd") }
-];
+const INITIAL_DIET: Meal[] = [];
 
-const INITIAL_ROUTINES: GlobalRoutine[] = [
-    {
-        id: "gr-1",
-        title: "Ritual Matinal",
-        time: "07:00",
-        icon: "sun",
-        days: ["mon", "tue", "wed", "thu", "fri"],
-        steps: [
-            { id: "s1", text: "Beber água", completed: false },
-            { id: "s2", text: "Ler 10 min", completed: false }
-        ]
-    }
-];
+const INITIAL_ROUTINES: GlobalRoutine[] = [];
 
 const INITIAL_FASTING: FastingState = {
     isActive: false,
@@ -251,73 +223,15 @@ const INITIAL_FASTING: FastingState = {
     elapsedSeconds: 0
 };
 
-const INITIAL_SLEEP: SleepLog[] = [
-    { id: "1", date: "2024-01-20", bedtime: "23:00", wakeup: "07:00", duration: 8, quality: "good" }
-];
+const INITIAL_SLEEP: SleepLog[] = [];
 
-const INITIAL_TASKS: Task[] = [
-    { id: "1", title: "Definir paleta de cores", status: "done", column: "done", priority: "high", description: "Utilizar cores vibrantes e dark mode.", subtasks: [{ id: "s1", text: "Escolher primária", completed: true }] },
-    { id: "2", title: "Criar componentes base", status: "doing", column: "doing", priority: "high", description: "Botoes, inputs, cards.", subtasks: [] },
-    { id: "3", title: "Configurar banco de dados", status: "todo", column: "todo", priority: "medium", description: "", subtasks: [] },
-];
+const INITIAL_TASKS: Task[] = [];
 
-const INITIAL_GOALS: Goal[] = [
-    {
-        id: "1",
-        title: "Maratona 2026",
-        description: "Completar a maratona de São Paulo em menos de 4 horas.",
-        targetDate: new Date("2026-04-12"),
-        imageUrl: "https://images.unsplash.com/photo-1552674605-469523254ca5?q=80&w=2600&auto=format&fit=crop",
-        status: "in_progress",
-        tasks: [
-            { id: "1", title: "Correr 5km", completed: true },
-            { id: "2", title: "Correr 10km", completed: true },
-            { id: "3", title: "Correr 21km", completed: false },
-        ]
-    }
-];
+const INITIAL_GOALS: Goal[] = [];
 
-const INITIAL_SUBJECTS: StudySubject[] = [
-    {
-        id: "1",
-        title: "Cálculo I",
-        category: "college",
-        progress: 45,
-        totalHours: 12.5,
-        lastStudied: "2024-03-10",
-        dueDate: format(addDays(new Date(), 2), "yyyy-MM-dd"),
-        tasks: [
-            { id: "101", text: "Revisar Limites", completed: true },
-            { id: "102", text: "Exercícios Derivadas", completed: false },
-            { id: "103", text: "Prova P1", completed: false },
-        ]
-    },
-    {
-        id: "2",
-        title: "React Mastery",
-        category: "course",
-        progress: 30,
-        totalHours: 8.0,
-        lastStudied: "2024-03-12",
-        tasks: [
-            { id: "201", text: "Hooks Básicos", completed: true },
-            { id: "202", text: "Context API", completed: false },
-        ]
-    }
-];
+const INITIAL_SUBJECTS: StudySubject[] = [];
 
-const INITIAL_RESOURCES: Resource[] = [
-    {
-        id: "1",
-        title: "Compras da Semana",
-        type: "list",
-        description: "Lista de itens essenciais para o mercado semanal.",
-        tasks: [
-            { id: "1", text: "Leite", completed: false },
-            { id: "2", text: "Ovos", completed: true },
-        ]
-    },
-];
+const INITIAL_RESOURCES: Resource[] = [];
 
 export function GlobalDataProvider({ children }: { children: React.ReactNode }) {
     // Health State
