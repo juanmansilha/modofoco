@@ -15,16 +15,9 @@ import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 
 // Mock Data Intializers
-const INITIAL_ACCOUNTS = [
-    { id: "1", name: "Nubank", balance: 1250.50, type: "bank", color: "#820ad1" },
-    { id: "2", name: "Carteira", balance: 350.00, type: "wallet", color: "#10b981" },
-];
+const INITIAL_ACCOUNTS = [];
 
-const INITIAL_TRANSACTIONS = [
-    { id: "1", description: "Salário", amount: 5000, type: "income", category: "other", date: new Date(), accountId: "1" },
-    { id: "2", description: "Aluguel", amount: 1800, type: "expense", category: "housing", date: new Date(), accountId: "1" },
-    { id: "3", description: "Mercado", amount: 450.20, type: "expense", category: "food", date: new Date(), accountId: "1" },
-];
+const INITIAL_TRANSACTIONS = [];
 
 export default function FinancePage() {
     const { awardFP } = useGamification();
