@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Edit2, Trash2, Tag } from "lucide-react";
+import { X, Plus, Edit2, Trash2, Tag, Home, ShoppingCart, Car, Coffee, Utensils, Zap, Heart, Gift, Briefcase, GraduationCap, Plane, Wallet, TrendingUp, DollarSign } from "lucide-react";
 
 interface Category {
     id: string;
@@ -18,30 +18,46 @@ interface CategoryManagerProps {
     onSave: (categories: Category[]) => void;
 }
 
+const CATEGORY_ICONS = [
+    { id: "DollarSign", icon: DollarSign },
+    { id: "Wallet", icon: Wallet },
+    { id: "TrendingUp", icon: TrendingUp },
+    { id: "ShoppingCart", icon: ShoppingCart },
+    { id: "Utensils", icon: Utensils },
+    { id: "Coffee", icon: Coffee },
+    { id: "Home", icon: Home },
+    { id: "Car", icon: Car },
+    { id: "Zap", icon: Zap },
+    { id: "Heart", icon: Heart },
+    { id: "Gift", icon: Gift },
+    { id: "Briefcase", icon: Briefcase },
+    { id: "GraduationCap", icon: GraduationCap },
+    { id: "Plane", icon: Plane },
+    { id: "Tag", icon: Tag },
+];
+
 const COLORS = [
-    { value: "bg-red-500", label: "vermelho" },
-    { value: "bg-orange-500", label: "laranja" },
-    { value: "bg-amber-500", label: "âmbar" },
-    { value: "bg-yellow-500", label: "amarelo" },
-    { value: "bg-lime-500", label: "lima" },
-    { value: "bg-green-500", label: "verde" },
-    { value: "bg-emerald-500", label: "esmeralda" },
-    { value: "bg-teal-500", label: "azul-petróleo" },
-    { value: "bg-cyan-500", label: "ciano" },
-    { value: "bg-sky-500", label: "céu" },
-    { value: "bg-blue-500", label: "azul" },
-    { value: "bg-indigo-500", label: "índigo" },
-    { value: "bg-violet-500", label: "violeta" },
-    { value: "bg-purple-500", label: "roxo" },
-    { value: "bg-fuchsia-500", label: "fúcsia" },
-    { value: "bg-pink-500", label: "rosa" },
-    { value: "bg-rose-500", label: "rosê" }
+    { value: "#ef4444", label: "Vermelho" },
+    { value: "#f97316", label: "Laranja" },
+    { value: "#f59e0b", label: "Âmbar" },
+    { value: "#eab308", label: "Amarelo" },
+    { value: "#84cc16", label: "Lima" },
+    { value: "#22c55e", label: "Verde" },
+    { value: "#10b981", label: "Esmeralda" },
+    { value: "#14b8a6", label: "Teal" },
+    { value: "#06b6d4", label: "Ciano" },
+    { value: "#0ea5e9", label: "Sky" },
+    { value: "#3b82f6", label: "Azul" },
+    { value: "#6366f1", label: "Índigo" },
+    { value: "#a855f7", label: "Violeta" },
+    { value: "#d946ef", label: "Fúcsia" },
+    { value: "#ec4899", label: "Rosa" },
 ];
 
 export function CategoryManager({ isOpen, onClose, categories, onSave }: CategoryManagerProps) {
     const [localCategories, setLocalCategories] = useState<Category[]>(categories);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [newCategory, setNewCategory] = useState({ name: "", type: "expense" as "income" | "expense", color: "bg-blue-500" });
+    const [newCategory, setNewCategory] = useState({ name: "", type: "expense" as "income" | "expense", color: "#3b82f6", icon: "Tag" });
 
     if (!isOpen) return null;
 
@@ -52,11 +68,12 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
             id: Date.now().toString(),
             name: newCategory.name,
             type: newCategory.type,
-            color: newCategory.color
+            color: newCategory.color,
+            icon: newCategory.icon
         };
 
         setLocalCategories([...localCategories, category]);
-        setNewCategory({ name: "", type: "expense", color: "bg-blue-500" });
+        setNewCategory({ name: "", type: "expense", color: "#3b82f6", icon: "Tag" });
     };
 
     const handleDelete = (id: string) => {
@@ -99,42 +116,76 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {/* Add New Category */}
-                    <div className="bg-zinc-800/50 border border-white/5 rounded-xl p-4">
-                        <h3 className="text-sm font-medium text-zinc-400 mb-3">Nova Categoria</h3>
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                placeholder="Nome da categoria"
-                                value={newCategory.name}
-                                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                                className="flex-1 bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                            />
-                            <select
-                                value={newCategory.type}
-                                onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value as "income" | "expense" })}
-                                className="bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                            >
-                                <option value="expense">Despesa</option>
-                                <option value="income">Receita</option>
-                            </select>
-                            <select
-                                value={newCategory.color}
-                                onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
-                                className="bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
-                            >
-                                {COLORS.map(color => (
-                                    <option key={color.value} value={color.value}>{color.label}</option>
-                                ))}
-                            </select>
-                            <button
-                                onClick={handleAdd}
-                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <Plus size={16} />
-                                Adicionar
-                            </button>
+                    <div className="bg-zinc-800/50 border border-white/5 rounded-xl p-6 space-y-4">
+                        <h3 className="text-sm font-medium text-zinc-400">Nova Categoria</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs text-zinc-500 uppercase font-bold">Nome</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ex: Salário, Mercado..."
+                                    value={newCategory.name}
+                                    onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                                    className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                                    onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs text-zinc-500 uppercase font-bold">Tipo</label>
+                                <select
+                                    value={newCategory.type}
+                                    onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value as "income" | "expense" })}
+                                    className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                                >
+                                    <option value="expense">Despesa</option>
+                                    <option value="income">Receita</option>
+                                </select>
+                            </div>
                         </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs text-zinc-500 uppercase font-bold">Escolha um Ícone</label>
+                            <div className="grid grid-cols-5 md:grid-cols-8 gap-2">
+                                {CATEGORY_ICONS.map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setNewCategory({ ...newCategory, icon: item.id })}
+                                        className={`p-2 rounded-lg flex items-center justify-center transition-all ${newCategory.icon === item.id ? "bg-blue-500 text-white shadow-lg" : "bg-zinc-900 text-zinc-500 hover:text-white hover:bg-zinc-800"}`}
+                                    >
+                                        <item.icon size={18} />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs text-zinc-500 uppercase font-bold">Cor</label>
+                            <div className="flex flex-wrap gap-2">
+                                {COLORS.map(color => (
+                                    <button
+                                        key={color.value}
+                                        onClick={() => setNewCategory({ ...newCategory, color: color.value })}
+                                        className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${newCategory.color === color.value ? "border-white scale-110" : "border-transparent"}`}
+                                        style={{ backgroundColor: color.value }}
+                                        title={color.label}
+                                    />
+                                ))}
+                                <input
+                                    type="color"
+                                    value={newCategory.color}
+                                    onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
+                                    className="w-8 h-8 rounded-full bg-zinc-900 border border-white/10 cursor-pointer p-0 overflow-hidden"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleAdd}
+                            className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-bold"
+                        >
+                            <Plus size={16} />
+                            Adicionar Categoria
+                        </button>
                     </div>
 
                     {/* Income Categories */}
@@ -142,8 +193,13 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
                         <h3 className="text-sm font-medium text-emerald-400 mb-3">Receitas</h3>
                         <div className="space-y-2">
                             {incomeCategories.map(category => (
-                                <div key={category.id} className="flex items-center gap-2 p-3 bg-zinc-800/30 border border-white/5 rounded-lg group">
-                                    <div className={`w-3 h-3 rounded-full ${category.color}`} />
+                                <div key={category.id} className="flex items-center gap-3 p-3 bg-zinc-800/30 border border-white/5 rounded-lg group">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${category.color}20`, color: category.color }}>
+                                        {(() => {
+                                            const Icon = CATEGORY_ICONS.find(i => i.id === category.icon)?.icon || Tag;
+                                            return <Icon size={16} />;
+                                        })()}
+                                    </div>
                                     {editingId === category.id ? (
                                         <input
                                             type="text"
@@ -181,8 +237,13 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
                         <h3 className="text-sm font-medium text-red-400 mb-3">Despesas</h3>
                         <div className="space-y-2">
                             {expenseCategories.map(category => (
-                                <div key={category.id} className="flex items-center gap-2 p-3 bg-zinc-800/30 border border-white/5 rounded-lg group">
-                                    <div className={`w-3 h-3 rounded-full ${category.color}`} />
+                                <div key={category.id} className="flex items-center gap-3 p-3 bg-zinc-800/30 border border-white/5 rounded-lg group">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${category.color}20`, color: category.color }}>
+                                        {(() => {
+                                            const Icon = CATEGORY_ICONS.find(i => i.id === category.icon)?.icon || Tag;
+                                            return <Icon size={16} />;
+                                        })()}
+                                    </div>
                                     {editingId === category.id ? (
                                         <input
                                             type="text"

@@ -9,10 +9,11 @@ interface TransactionModalProps {
     onClose: () => void;
     onSave: (transaction: any) => void;
     accounts: any[];
+    categories: any[];
     initialData?: any;
 }
 
-export function TransactionModal({ isOpen, onClose, onSave, accounts, initialData }: TransactionModalProps) {
+export function TransactionModal({ isOpen, onClose, onSave, accounts, categories, initialData }: TransactionModalProps) {
     const [description, setDescription] = useState("");
     const [amount, setAmount] = useState("");
     const [type, setType] = useState<"income" | "expense">("expense");
@@ -134,10 +135,14 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, initialDat
                                         className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                     >
                                         <option value="other">Outros</option>
-                                        <option value="food">Alimentação</option>
-                                        <option value="shopping">Compras</option>
-                                        <option value="housing">Moradia</option>
-                                        <option value="transport">Transporte</option>
+                                        {categories
+                                            .filter(cat => cat.type === type)
+                                            .map(cat => (
+                                                <option key={cat.id} value={cat.name}>
+                                                    {cat.name}
+                                                </option>
+                                            ))
+                                        }
                                     </select>
                                 </div>
                                 <div>

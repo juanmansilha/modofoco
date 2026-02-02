@@ -493,17 +493,27 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     // --- Productivity Actions ---
 
     const addTask = async (task: Task) => {
-        if (!userId) return;
+        if (!userId) {
+            console.error("User ID not found when adding task");
+            return;
+        }
         try {
+            // Clean task object before sending to Supabase
+            const { id, column, ...taskPayload } = task;
             const created = await SupabaseProductivity.createTask({
-                ...task,
+                ...taskPayload,
                 user_id: userId,
-                id: undefined,
-                column_id: task.column
+                column_id: column || 'todo'
             });
-            setTasks([...tasks, { ...created, column: created.column_id }]);
+
+            if (created) {
+                setTasks(prev => [...prev, { ...created, column: created.column_id }]);
+                return true;
+            }
         } catch (e) {
-            console.error("Error adding task:", e);
+            console.error("Error adding task to Supabase:", e);
+            // We could add a toast notification here if we had a toaster context
+            throw e; // Re-throw to let the caller know it failed
         }
     };
 

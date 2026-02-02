@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, ArrowDownLeft, Coffee, ShoppingCart, Home, Car, DollarSign } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Coffee, ShoppingCart, Home, Car, DollarSign, Tag, Zap, Heart, Gift, Briefcase, GraduationCap, Plane, Wallet, TrendingUp, Utensils } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -17,22 +17,32 @@ interface Transaction {
 
 interface TransactionListProps {
     transactions: Transaction[];
+    categories: any[];
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
     onConfirm: (id: string) => void;
 }
 
-const getCategoryIcon = (category: string) => {
-    switch (category) {
-        case "food": return Coffee;
-        case "shopping": return ShoppingCart;
-        case "housing": return Home;
-        case "transport": return Car;
-        default: return DollarSign;
+const ALL_ICONS: Record<string, any> = { DollarSign, Wallet, TrendingUp, ShoppingCart, Utensils, Coffee, Home, Car, Zap, Heart, Gift, Briefcase, GraduationCap, Plane, Tag };
+
+const getCategoryIcon = (categoryName: string, categories: any[]) => {
+    const category = categories.find(c => c.name === categoryName);
+    if (category && category.icon && ALL_ICONS[category.icon]) {
+        return ALL_ICONS[category.icon];
+    }
+
+    // Fallback logic for old categories or if not found
+    switch (categoryName.toLowerCase()) {
+        case "food": case "alimentação": return Coffee;
+        case "shopping": case "compras": return ShoppingCart;
+        case "housing": case "moradia": return Home;
+        case "transport": case "transporte": return Car;
+        case "salary": case "salário": return DollarSign;
+        default: return Tag;
     }
 };
 
-export function TransactionList({ transactions, onEdit, onDelete, onConfirm }: TransactionListProps) {
+export function TransactionList({ transactions, categories, onEdit, onDelete, onConfirm }: TransactionListProps) {
     if (transactions.length === 0) {
         return (
             <div className="text-center py-8 text-zinc-500">
@@ -44,7 +54,7 @@ export function TransactionList({ transactions, onEdit, onDelete, onConfirm }: T
     return (
         <div className="space-y-3">
             {transactions.map((transaction) => {
-                const Icon = getCategoryIcon(transaction.category);
+                const Icon = getCategoryIcon(transaction.category, categories);
                 const isExpense = transaction.type === "expense";
                 const isPending = transaction.confirmed === false;
 
@@ -52,8 +62,8 @@ export function TransactionList({ transactions, onEdit, onDelete, onConfirm }: T
                     <div
                         key={transaction.id}
                         className={`flex items-center justify-between p-3 rounded-xl border transition-colors group ${isPending
-                                ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
-                                : 'bg-zinc-900/30 border-white/5 hover:bg-zinc-900/50'
+                            ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+                            : 'bg-zinc-900/30 border-white/5 hover:bg-zinc-900/50'
                             }`}
                     >
                         <div className="flex items-center gap-3">

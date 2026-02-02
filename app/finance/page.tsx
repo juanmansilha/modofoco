@@ -63,15 +63,7 @@ export default function FinancePage() {
 
                 setAccounts(accountsData);
                 setTransactions(transactionsData);
-
-                if (categoriesData.length > 0) {
-                    setCategories(categoriesData.map(cat => ({
-                        id: cat.id,
-                        name: cat.name,
-                        type: cat.type as "income" | "expense",
-                        color: cat.color || 'bg-blue-500'
-                    })));
-                }
+                setCategories(categoriesData);
             } catch (error) {
                 console.error('Error loading finance data:', error);
             } finally {
@@ -403,6 +395,7 @@ export default function FinancePage() {
                             <TransactionList
                                 // @ts-ignore
                                 transactions={filteredTransactions}
+                                categories={categories}
                                 onEdit={(id) => {
                                     setEditingTransaction(transactions.find(t => t.id === id));
                                     setIsTransactionModalOpen(true);
@@ -426,9 +419,13 @@ export default function FinancePage() {
 
             <TransactionModal
                 isOpen={isTransactionModalOpen}
-                onClose={() => setIsTransactionModalOpen(false)}
+                onClose={() => {
+                    setIsTransactionModalOpen(false);
+                    setEditingTransaction(null);
+                }}
                 onSave={handleSaveTransaction}
                 accounts={accounts}
+                categories={categories}
                 initialData={editingTransaction}
             />
 

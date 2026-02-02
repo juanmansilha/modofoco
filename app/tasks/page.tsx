@@ -95,14 +95,20 @@ export default function TasksPage() {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
-    const handleSaveTask = (taskData: any) => {
-        if (modalMode === 'create') {
-            addTask({ ...taskData, id: Math.random().toString(36).substr(2, 9), column: 'todo' });
-            awardFP(FOCO_POINTS.ADD_TASK, "Nova Tarefa Adicionada");
-        } else {
-            updateTask(taskData);
+    const handleSaveTask = async (taskData: any) => {
+        try {
+            if (modalMode === 'create') {
+                // Remove client-side ID generation, let Supabase handle it
+                await addTask({ ...taskData, column: 'todo' });
+                awardFP(FOCO_POINTS.ADD_TASK, "Nova Tarefa Adicionada");
+            } else {
+                await updateTask(taskData);
+            }
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error("Failed to save task:", error);
+            alert("Erro ao salvar tarefa. Verifique sua conexão.");
         }
-        setIsModalOpen(false);
     };
 
     const handleDeleteNativeTask = (id: string) => {
