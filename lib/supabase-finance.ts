@@ -97,7 +97,7 @@ export async function getFinanceTransactions(userId: string): Promise<FinanceTra
 
 export async function createFinanceTransaction(transaction: Omit<FinanceTransaction, 'id' | 'created_at' | 'updated_at'>): Promise<FinanceTransaction> {
     // Map camelCase to snake_case for Supabase
-    const { accountId, ...rest } = transaction;
+    const { accountId, confirmed, ...rest } = transaction;
 
     const dbTransaction: any = {
         ...rest,
@@ -108,6 +108,9 @@ export async function createFinanceTransaction(transaction: Omit<FinanceTransact
         dbTransaction.user_id = dbTransaction.userId;
         delete dbTransaction.userId;
     }
+
+    // Ensure confirmed is NOT sent if column doesn't exist
+    // dbTransaction.confirmed = confirmed; 
 
     const { data, error } = await supabase
         .from('finance_transactions')
@@ -126,6 +129,9 @@ export async function updateFinanceTransaction(id: string, updates: Partial<Fina
         dbUpdates.account_id = (updates as any).accountId;
         delete dbUpdates.accountId;
     }
+
+    // Remove confirmed if present in updates
+    delete dbUpdates.confirmed;
 
     const { data, error } = await supabase
         .from('finance_transactions')
@@ -148,7 +154,18 @@ export async function deleteFinanceTransaction(id: string): Promise<void> {
 }
 
 export async function confirmTransaction(id: string): Promise<FinanceTransaction> {
-    return updateFinanceTransaction(id, { confirmed: true });
+    // Since 'confirmed' column is missing, we can't update it in DB.
+    // We'll just return the transaction as is or handle it client-side only.
+    // For now, this function is effectively a no-op on the DB side regarding 'confirmed' status.
+    // Use getFinanceTransactions to re-fetch if needed.
+    const { data, error } = await supabase
+        .from('finance_transactions')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) throw error;
+    return data;
 }
 
 // ============ CATEGORIES ============
@@ -270,8 +287,8 @@ export async function syncLocalToSupabase(
                 amount: trans.amount,
                 type: trans.type,
                 category: trans.category,
-                date: trans.date,
-                confirmed: trans.confirmed !== false
+                date: trans.date
+                // confirmed: trans.confirmed !== false // REMOVED confirmed
             }));
             await supabase.from('finance_transactions').insert(transactionsToInsert);
         }
