@@ -44,13 +44,19 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!accountId) {
+            alert("Selecione uma conta para a transação.");
+            return;
+        }
+
         onSave({
             description,
             amount: parseFloat(amount) || 0,
             type,
             category,
             accountId,
-            date: new Date(date),
+            date, // Pass as string (YYYY-MM-DD) to match database format
             confirmed: isConfirmed
         });
         onClose();
