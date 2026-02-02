@@ -99,20 +99,6 @@ export default function DashboardPage() {
         });
     }, [runSessions, gymRoutines]);
 
-    // Financial Mock Data
-    const upcomingBills = [
-        { id: 1, title: "Internet Fibra", value: 149.90, date: "05/02", icon: Zap },
-        { id: 2, title: "Cartão Nubank", value: 1250.00, date: "10/02", icon: CreditCard },
-        { id: 3, title: "Aluguel", value: 2200.00, date: "10/02", icon: Home },
-    ];
-
-    const categories = [
-        { id: 1, name: "Mercado", value: "35%", icon: ShoppingBag, color: "bg-pink-500" },
-        { id: 2, name: "Lazer", value: "20%", icon: Utensils, color: "bg-orange-500" },
-        { id: 3, name: "Transporte", value: "15%", icon: Car, color: "bg-blue-500" },
-        { id: 4, name: "Casa", value: "30%", icon: Home, color: "bg-emerald-500" },
-    ];
-
     return (
         <div className="space-y-6 p-4 md:p-8 h-full overflow-y-auto custom-scrollbar bg-background text-foreground pb-24">
 
@@ -292,65 +278,6 @@ export default function DashboardPage() {
 
                 {/* Right Column: Finance & Tasks */}
                 <div className="space-y-6">
-
-                    {/* Finance Detailed Card */}
-                    <Card className="p-0 border-white/5 bg-zinc-900/30 overflow-hidden">
-                        <div className="p-5 border-b border-white/5">
-                            <h3 className="font-bold text-white flex items-center gap-2">
-                                <DollarSign size={18} className="text-emerald-500" />
-                                Resumo Financeiro
-                            </h3>
-                        </div>
-
-                        <div className="p-5 space-y-6">
-                            {/* Saídas */}
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Saídas do Mês</p>
-                                    <p className="text-2xl font-bold text-white">R$ 4.250,90</p>
-                                </div>
-                                <div className="h-10 w-10 bg-red-500/10 rounded-full flex items-center justify-center text-red-500">
-                                    <ArrowDownRight size={20} />
-                                </div>
-                            </div>
-
-                            {/* Filters / Categories */}
-                            <div>
-                                <p className="text-xs text-zinc-500 mb-3">Gastos por Categoria</p>
-                                <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                                    {categories.map(cat => (
-                                        <div key={cat.id} className="flex flex-col items-center gap-2 shrink-0">
-                                            <div className={`w-12 h-12 rounded-full ${cat.color} flex items-center justify-center text-white shadow-lg`}>
-                                                <cat.icon size={18} />
-                                            </div>
-                                            <span className="text-[10px] text-zinc-400 font-medium">{cat.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Upcoming Accounts */}
-                            <div>
-                                <p className="text-xs text-zinc-500 mb-3 uppercase tracking-wider">Próximas Contas</p>
-                                <div className="space-y-3">
-                                    {upcomingBills.map(bill => (
-                                        <div key={bill.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg transition-colors cursor-pointer group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
-                                                    <bill.icon size={14} />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-zinc-200">{bill.title}</p>
-                                                    <p className="text-xs text-zinc-500">{bill.date}</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-sm font-bold text-white">R$ {bill.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
 
                     {/* Next Tasks List (Collapsed) */}
                     <Card className="p-6 border-white/5 bg-zinc-900/30 h-fit">
