@@ -25,6 +25,15 @@ export default function FinancePage() {
     const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
     const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
 
+    // Save to localStorage whenever accounts or transactions change
+    useEffect(() => {
+        localStorage.setItem('mf_finance_accounts', JSON.stringify(accounts));
+    }, [accounts]);
+
+    useEffect(() => {
+        localStorage.setItem('mf_finance_transactions', JSON.stringify(transactions));
+    }, [transactions]);
+
     // Helpers
     const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
     const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));

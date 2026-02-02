@@ -45,6 +45,44 @@ export default function DashboardPage() {
     } = useGlobalData();
     const { level, progress } = useGamification();
 
+    // Financial Data (read from localStorage or default to 0)
+    const [financialData, setFinancialData] = useState({ balance: 0, expenses: 0, income: 0 });
+
+    useEffect(() => {
+        // This would ideally come from a shared context or API
+        // For now, we'll calculate from localStorage if finance page saves data there
+        const savedAccounts = localStorage.getItem('mf_finance_accounts');
+        const savedTransactions = localStorage.getItem('mf_finance_transactions');
+
+        if (savedAccounts && savedTransactions) {
+            try {
+                const accounts = JSON.parse(savedAccounts);
+                const transactions = JSON.parse(savedTransactions);
+
+                const totalBalance = accounts.reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
+
+                const currentMonth = new Date();
+                const monthTransactions = transactions.filter((t: any) => {
+                    const tDate = new Date(t.date);
+                    return tDate.getMonth() === currentMonth.getMonth() &&
+                        tDate.getFullYear() === currentMonth.getFullYear();
+                });
+
+                const expenses = monthTransactions
+                    .filter((t: any) => t.type === 'expense')
+                    .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+
+                const income = monthTransactions
+                    .filter((t: any) => t.type === 'income')
+                    .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+
+                setFinancialData({ balance: totalBalance, expenses, income });
+            } catch (e) {
+                console.error('Error loading financial data:', e);
+            }
+        }
+    }, []);
+
     // Greeting
     const [greeting, setGreeting] = useState("Bem-vindo");
     useEffect(() => {
@@ -163,11 +201,20 @@ export default function DashboardPage() {
                             <Wallet size={16} />
                         </div>
                     </div>
-                    <p className="text-2xl font-bold text-white tracking-tight">R$ 14.250,00</p>
-                    <div className="flex items-center text-emerald-500 text-xs mt-2 font-medium bg-emerald-500/5 py-1 px-2 rounded w-fit">
-                        <ArrowUpRight size={12} className="mr-1" />
-                        <span>Receitas em alta</span>
-                    </div>
+                    <p className="text-2xl font-bold text-white tracking-tight">
+                        R$ {financialData.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    {financialData.income > financialData.expenses ? (
+                        <div className="flex items-center text-emerald-500 text-xs mt-2 font-medium bg-emerald-500/5 py-1 px-2 rounded w-fit">
+                            <ArrowUpRight size={12} className="mr-1" />
+                            <span>Receitas em alta</span>
+                        </div>
+                    ) : financialData.expenses > 0 ? (
+                        <div className="flex items-center text-red-500 text-xs mt-2 font-medium bg-red-500/5 py-1 px-2 rounded w-fit">
+                            <ArrowDownRight size={12} className="mr-1" />
+                            <span>Atenção aos gastos</span>
+                        </div>
+                    ) : null}
                 </Card>
 
                 {/* Habits Score */}
