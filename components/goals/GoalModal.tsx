@@ -30,7 +30,7 @@ export function GoalModal({ isOpen, onClose, onSave, initialData }: GoalModalPro
         if (isOpen && initialData) {
             setTitle(initialData.title);
             setDescription(initialData.description);
-            setTargetDate(new Date(initialData.targetDate).toISOString().split('T')[0]);
+            setTargetDate(initialData.targetDate ? new Date(initialData.targetDate).toISOString().split('T')[0] : "");
             setImageUrl(initialData.imageUrl);
             setStatus(initialData.status);
             setTasks(initialData.tasks || []);

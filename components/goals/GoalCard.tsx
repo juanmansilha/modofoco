@@ -99,7 +99,17 @@ export function GoalCard({ id, title, description, targetDate, imageUrl, progres
                 <div className="flex items-center justify-between text-xs text-zinc-400 font-medium">
                     <div className="flex items-center gap-1.5">
                         <Calendar size={14} />
-                        <span>{format(new Date(targetDate), "dd MMM yyyy", { locale: ptBR })}</span>
+                        <span>
+                            {(() => {
+                                try {
+                                    const date = new Date(targetDate);
+                                    if (isNaN(date.getTime())) return "Sem data";
+                                    return format(date, "dd MMM yyyy", { locale: ptBR });
+                                } catch (e) {
+                                    return "Data inválida";
+                                }
+                            })()}
+                        </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <Target size={14} />

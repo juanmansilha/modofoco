@@ -92,7 +92,12 @@ export async function getFinanceTransactions(userId: string): Promise<FinanceTra
         .order('date', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    // Map snake_case to camelCase for frontend compatibility
+    return (data || []).map((t: any) => ({
+        ...t,
+        accountId: t.account_id
+    }));
 }
 
 export async function createFinanceTransaction(transaction: Omit<FinanceTransaction, 'id' | 'created_at' | 'updated_at'>): Promise<FinanceTransaction> {
@@ -109,8 +114,8 @@ export async function createFinanceTransaction(transaction: Omit<FinanceTransact
         delete dbTransaction.userId;
     }
 
-    // Ensure confirmed is NOT sent if column doesn't exist
-    // dbTransaction.confirmed = confirmed; 
+    // Ensure confirmed IS sent now that we are adding the column
+    dbTransaction.confirmed = confirmed;
 
     const { data, error } = await supabase
         .from('finance_transactions')
@@ -130,8 +135,8 @@ export async function updateFinanceTransaction(id: string, updates: Partial<Fina
         delete dbUpdates.accountId;
     }
 
-    // Remove confirmed if present in updates
-    delete dbUpdates.confirmed;
+    // Allow confirmed to be updated
+    // delete dbUpdates.confirmed;
 
     const { data, error } = await supabase
         .from('finance_transactions')
