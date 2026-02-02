@@ -53,6 +53,10 @@ const COLORS = [
     { value: "#d946ef", label: "Fúcsia" },
     { value: "#ec4899", label: "Rosa" },
 ];
+const CategoryIcon = ({ iconId }: { iconId?: string }) => {
+    const Icon = CATEGORY_ICONS.find(i => i.id === iconId)?.icon || Tag;
+    return <Icon size={16} />;
+};
 
 export function CategoryManager({ isOpen, onClose, categories, onSave }: CategoryManagerProps) {
     const [localCategories, setLocalCategories] = useState<Category[]>(categories);
@@ -195,10 +199,7 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
                             {incomeCategories.map(category => (
                                 <div key={category.id} className="flex items-center gap-3 p-3 bg-zinc-800/30 border border-white/5 rounded-lg group">
                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${category.color}20`, color: category.color }}>
-                                        {(() => {
-                                            const Icon = CATEGORY_ICONS.find(i => i.id === category.icon)?.icon || Tag;
-                                            return <Icon size={16} />;
-                                        })()}
+                                        <CategoryIcon iconId={category.icon} />
                                     </div>
                                     {editingId === category.id ? (
                                         <input
@@ -239,10 +240,7 @@ export function CategoryManager({ isOpen, onClose, categories, onSave }: Categor
                             {expenseCategories.map(category => (
                                 <div key={category.id} className="flex items-center gap-3 p-3 bg-zinc-800/30 border border-white/5 rounded-lg group">
                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${category.color}20`, color: category.color }}>
-                                        {(() => {
-                                            const Icon = CATEGORY_ICONS.find(i => i.id === category.icon)?.icon || Tag;
-                                            return <Icon size={16} />;
-                                        })()}
+                                        <CategoryIcon iconId={category.icon} />
                                     </div>
                                     {editingId === category.id ? (
                                         <input

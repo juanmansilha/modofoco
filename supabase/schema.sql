@@ -217,42 +217,11 @@ DROP POLICY IF EXISTS "Users can manage own routines" ON public.general_routines
 CREATE POLICY "Users can manage own routines" ON public.general_routines FOR ALL USING (auth.uid() = user_id);
 
 
--- ============================================
--- 10. FASTING STATE
--- ============================================
-CREATE TABLE IF NOT EXISTS public.fasting_logs (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    plan_id TEXT,
-    start_time TIMESTAMP WITH TIME ZONE,
-    end_time TIMESTAMP WITH TIME ZONE,
-    duration_seconds NUMERIC,
-    is_active BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-ALTER TABLE public.fasting_logs ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage own fasting" ON public.fasting_logs;
-CREATE POLICY "Users can manage own fasting" ON public.fasting_logs FOR ALL USING (auth.uid() = user_id);
+-- REMOVIDO: FASTING LOGS
 
 
--- ============================================
--- 11. SLEEP LOGS
--- ============================================
-CREATE TABLE IF NOT EXISTS public.sleep_logs (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    date DATE,
-    bedtime TEXT,
-    wakeup TEXT,
-    duration NUMERIC,
-    quality TEXT CHECK (quality IN ('good', 'avg', 'bad')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
-ALTER TABLE public.sleep_logs ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Users can manage own sleep" ON public.sleep_logs;
-CREATE POLICY "Users can manage own sleep" ON public.sleep_logs FOR ALL USING (auth.uid() = user_id);
+-- REMOVIDO: SLEEP LOGS
 
 
 -- ============================================
