@@ -12,12 +12,14 @@ interface Transaction {
     category: string;
     date: Date;
     accountId: string;
+    confirmed?: boolean;
 }
 
 interface TransactionListProps {
     transactions: Transaction[];
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
+    onConfirm: (id: string) => void;
 }
 
 const getCategoryIcon = (category: string) => {
@@ -30,7 +32,7 @@ const getCategoryIcon = (category: string) => {
     }
 };
 
-export function TransactionList({ transactions, onEdit, onDelete }: TransactionListProps) {
+export function TransactionList({ transactions, onEdit, onDelete, onConfirm }: TransactionListProps) {
     if (transactions.length === 0) {
         return (
             <div className="text-center py-8 text-zinc-500">
@@ -44,18 +46,29 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
             {transactions.map((transaction) => {
                 const Icon = getCategoryIcon(transaction.category);
                 const isExpense = transaction.type === "expense";
+                const isPending = transaction.confirmed === false;
 
                 return (
                     <div
                         key={transaction.id}
-                        className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/30 border border-white/5 hover:bg-zinc-900/50 transition-colors group"
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-colors group ${isPending
+                                ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+                                : 'bg-zinc-900/30 border-white/5 hover:bg-zinc-900/50'
+                            }`}
                     >
                         <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-lg ${isExpense ? "bg-red-500/10 text-red-500" : "bg-emerald-500/10 text-emerald-500"}`}>
                                 <Icon size={18} />
                             </div>
                             <div>
-                                <p className="font-medium text-white text-sm">{transaction.description}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-medium text-white text-sm">{transaction.description}</p>
+                                    {isPending && (
+                                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded font-medium">
+                                            PENDENTE
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-xs text-zinc-500">
                                     {format(new Date(transaction.date), "dd 'de' MMM", { locale: ptBR })}
                                 </p>
@@ -67,6 +80,14 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                                 {isExpense ? "-" : "+"} {transaction.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                             </p>
                             <div className="flex justify-end gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {isPending && (
+                                    <button
+                                        onClick={() => onConfirm(transaction.id)}
+                                        className="text-xs text-amber-500 hover:text-amber-400 font-medium"
+                                    >
+                                        Confirmar
+                                    </button>
+                                )}
                                 <button onClick={() => onEdit(transaction.id)} className="text-xs text-zinc-500 hover:text-white">Editar</button>
                                 <button onClick={() => onDelete(transaction.id)} className="text-xs text-zinc-500 hover:text-red-400">Excluir</button>
                             </div>

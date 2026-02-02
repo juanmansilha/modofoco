@@ -227,7 +227,6 @@ export default function FinancePage() {
                 }
                 return acc;
             }));
-            ```
             setTransactions(transactions.filter(t => t.id !== id));
         }
     };
@@ -368,6 +367,7 @@ export default function FinancePage() {
                                     setIsTransactionModalOpen(true);
                                 }}
                                 onDelete={handleDeleteTransaction}
+                                onConfirm={handleConfirmTransaction}
                             />
                         </div>
                     </div>
