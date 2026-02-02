@@ -17,7 +17,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { userData, isAuthLoading } = useGlobalData();
-    const isLoginPage = pathname === "/login" || pathname === "/onboarding";
+    // More robust check dealing with potential null pathname or trailing slashes
+    const isLoginPage = pathname?.startsWith("/login") || pathname === "/onboarding";
 
     // Redirect to login if not authenticated
     useEffect(() => {

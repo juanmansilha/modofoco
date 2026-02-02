@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { addDays, format } from "date-fns";
+import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import * as SupabaseHealth from "@/lib/supabase-health";
 import * as SupabaseProductivity from "@/lib/supabase-productivity";
@@ -274,7 +275,8 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     ...t,
                     priority: t.priority as any,
                     status: t.status as any,
-                    column: t.column_id
+                    column: t.column_id,
+                    dueDate: t.due_date // Map database column to frontend property
                 })));
                 setGoals(goalData);
                 setSubjects(subjectData);
@@ -735,7 +737,9 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         photo: null,
         onboardingCompleted: false
     });
-    const [isAuthLoading, setIsAuthLoading] = useState(true);
+    // Auth State
+    const [user, setUser] = useState<any | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(true); // Start as true to prevent flash
 
     // Supabase Auth & Profile Integration
     useEffect(() => {
