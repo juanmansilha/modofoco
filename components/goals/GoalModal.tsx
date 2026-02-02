@@ -49,7 +49,7 @@ export function GoalModal({ isOpen, onClose, onSave, initialData }: GoalModalPro
         onSave({
             title,
             description,
-            targetDate, // Pass as string (YYYY-MM-DD)
+            targetDate: `${targetDate}T12:00:00`, // Append time to fix persistence/timezone
             imageUrl,
             status,
             tasks

@@ -30,7 +30,9 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             setCategory(initialData.category);
             setAccountId(initialData.accountId);
             setIsConfirmed(initialData.confirmed !== false);
-            // setDate(new Date(initialData.date).toISOString().split('T')[0]);
+            // Correctly parse date string (YYYY-MM-DD or ISO) to input format
+            const dateStr = initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+            setDate(dateStr);
         } else if (isOpen) {
             setDescription("");
             setAmount("");
@@ -56,7 +58,8 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             type,
             category,
             accountId,
-            date, // Pass as string (YYYY-MM-DD) to match database format
+            // Append a specific time (noon) to avoid timezone shifts when saving to UTC
+            date: `${date}T12:00:00`,
             confirmed: isConfirmed
         });
         onClose();

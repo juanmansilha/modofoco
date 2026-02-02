@@ -40,7 +40,7 @@ export function GoalCard({ id, title, description, targetDate, imageUrl, progres
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
-                    src={imageUrl || "https://images.unsplash.com/photo-1494548162494-384bba4ab999?q=80&w=2960&auto=format&fit=crop"} // Default fallback
+                    src={imageUrl || "/placeholder-goal.jpg"} // Use local placeholder or empty if preferred
                     alt={title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
