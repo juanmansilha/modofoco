@@ -9,6 +9,7 @@ interface AccountCardProps {
     balance: number;
     type: string;
     color: string;
+    logo_url?: string;
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
 }
@@ -21,7 +22,7 @@ const getIcon = (type: string) => {
     }
 };
 
-export function AccountCard({ id, name, balance, type, color, onEdit, onDelete }: AccountCardProps) {
+export function AccountCard({ id, name, balance, type, color, onEdit, onDelete, ...props }: AccountCardProps) {
     const Icon = getIcon(type);
 
     return (
@@ -33,8 +34,13 @@ export function AccountCard({ id, name, balance, type, color, onEdit, onDelete }
             />
 
             <div className="relative z-10 flex justify-between items-start mb-4">
-                <div className="p-3 rounded-xl bg-zinc-900 border border-white/5">
-                    <Icon size={24} style={{ color }} />
+                <div className={`p-3 rounded-xl border border-white/5 ${props.logo_url ? 'bg-white p-1' : 'bg-zinc-900'}`}>
+                    {props.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={props.logo_url} alt={name} className="w-6 h-6 object-contain" />
+                    ) : (
+                        <Icon size={24} style={{ color }} />
+                    )}
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => onEdit(id)} className="p-1.5 hover:bg-white/10 rounded-lg text-zinc-500 hover:text-white transition-colors">

@@ -7,6 +7,7 @@ export interface FinanceAccount {
     balance: number;
     type?: string;
     color?: string;
+    logo_url?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -354,7 +355,8 @@ export async function syncLocalToSupabase(
             name: acc.name,
             balance: acc.balance,
             type: acc.type,
-            color: acc.color
+            color: acc.color,
+            logo_url: acc.logo_url
         }));
         const { data: insertedAccounts } = await supabase
             .from('finance_accounts')

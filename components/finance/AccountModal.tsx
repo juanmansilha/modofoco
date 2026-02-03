@@ -16,6 +16,7 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
     const [balance, setBalance] = useState("");
     const [type, setType] = useState("bank");
     const [color, setColor] = useState("#3b82f6");
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen && initialData) {
@@ -23,11 +24,13 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
             setBalance(initialData.balance?.toString() || "");
             setType(initialData.type);
             setColor(initialData.color);
+            setLogoUrl(initialData.logo_url || null);
         } else {
             setName("");
             setBalance("");
             setType("bank");
             setColor("#3b82f6");
+            setLogoUrl(null);
         }
     }, [isOpen, initialData]);
 
@@ -37,7 +40,8 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
             name,
             balance: parseFloat(balance) || 0,
             type,
-            color
+            color,
+            logo_url: logoUrl
         });
         onClose();
     };
@@ -91,6 +95,37 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                     className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                     placeholder="R$ 0,00"
                                 />
+                            </div>
+
+                            {/* Bank Presets */}
+                            <div>
+                                <label className="block text-sm text-zinc-400 mb-2">Bancos Populares</label>
+                                <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                                    {[
+                                        { name: "Nubank", color: "#820ad1", logo: "/banks/nubank.png" },
+                                        { name: "Banco do Brasil", color: "#fbfd00", logo: "/banks/bb.png" },
+                                        { name: "Santander", color: "#ec0000", logo: "/banks/santander.jpg" },
+                                        { name: "Itaú", color: "#ec7000", logo: "/banks/itau.png" },
+                                        { name: "Caixa", color: "#1f8ef0", logo: "/banks/caixa.png" },
+                                    ].map((bank) => (
+                                        <button
+                                            key={bank.name}
+                                            type="button"
+                                            onClick={() => {
+                                                setName(bank.name);
+                                                setColor(bank.color);
+                                                setLogoUrl(bank.logo);
+                                            }}
+                                            className="flex flex-col items-center gap-1 min-w-[70px] group"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1 border border-white/10 group-hover:border-indigo-500 transition-colors relative overflow-hidden">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain" />
+                                            </div>
+                                            <span className="text-[10px] text-zinc-400 text-center truncate w-full">{bank.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

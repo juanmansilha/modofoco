@@ -236,6 +236,7 @@ CREATE TABLE IF NOT EXISTS public.finance_accounts (
     account_limit NUMERIC DEFAULT 0, -- Limite da Conta / Cheque Especial
     type TEXT,
     color TEXT,
+    logo_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
