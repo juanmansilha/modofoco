@@ -56,6 +56,7 @@ export interface UserData {
     name: string;
     email?: string;
     whatsapp?: string;
+    falconEnabled?: boolean;
     photo?: string | null;
     focus?: string[];
     discovery?: string;
@@ -734,6 +735,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         name: "",
         email: "",
         whatsapp: "",
+        falconEnabled: false,
         photo: null,
         onboardingCompleted: false
     });
@@ -750,6 +752,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     name: data.name || "",
                     email: data.email || "",
                     whatsapp: data.whatsapp || "",
+                    falconEnabled: data.falcon_enabled || false,
                     photo: data.photo || null,
                     onboardingCompleted: data.onboarding_completed || false,
                     focus: data.focus || [],
@@ -788,6 +791,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             const updates = {
                 name: data.name,
                 whatsapp: data.whatsapp,
+                falcon_enabled: data.falconEnabled,
                 photo: data.photo,
                 focus: data.focus,
                 discovery: data.discovery,
