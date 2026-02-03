@@ -10,7 +10,7 @@ export function IntroAnimation({ children }: { children: React.ReactNode }) {
         // Simple loading delay
         const timer = setTimeout(() => {
             setIsLoading(false);
-        }, 1500);
+        }, 800);
 
         return () => clearTimeout(timer);
     }, []);

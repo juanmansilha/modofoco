@@ -806,8 +806,26 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     };
 
     const login = async (email: string, pass: string) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        // 1. Auth Sign In
+        const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
+
+        // 2. Immediate Profile Fetch (Avoids race condition with onAuthStateChange)
+        if (session?.user) {
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+            if (profile) {
+                setUserData({
+                    name: profile.name || "",
+                    email: profile.email || "",
+                    whatsapp: profile.whatsapp || "",
+                    photo: profile.photo || null,
+                    onboardingCompleted: profile.onboarding_completed || false,
+                    focus: profile.focus || [],
+                    discovery: profile.discovery || ""
+                });
+                setUserId(session.user.id);
+            }
+        }
     };
 
     const signup = async (email: string, pass: string, name: string) => {
