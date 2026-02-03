@@ -20,23 +20,60 @@ export default function HealthPage() {
     const todayItems = getItemsForDate(today);
 
     // Stats Calculations
+    // Helper to parse duration string to minutes
+    const parseDurationToMinutes = (durationStr: string | undefined): number => {
+        if (!durationStr) return 0;
+
+        // Handle "HH:MM" format
+        if (durationStr.includes(':')) {
+            const parts = durationStr.split(':');
+            if (parts.length === 2) {
+                return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            }
+        }
+
+        // Handle "60 min", "1h", etc.
+        const lower = durationStr.toLowerCase();
+        if (lower.includes('h')) {
+            const hours = parseInt(lower.replace(/[^0-9]/g, ''));
+            return isNaN(hours) ? 0 : hours * 60;
+        }
+        if (lower.includes('min') || lower.includes('m')) {
+            const mins = parseInt(lower.replace(/[^0-9]/g, ''));
+            return isNaN(mins) ? 0 : mins;
+        }
+
+        // Fallback: try parsing exact number
+        const val = parseInt(durationStr);
+        return isNaN(val) ? 0 : val;
+    };
+
+    // Stats Calculations (Real Data)
     const todayCals = useMemo(() => {
         let calories = 0;
         todayItems.forEach(item => {
-            if (item.type === 'run' && item.data.calories) calories += item.data.calories;
-            // Add gym calories estimation if available (mocked for now)
-            if (item.type === 'gym' && item.isCompleted) calories += 300;
+            if (item.isCompleted) {
+                if (item.type === 'run' && item.data.calories) {
+                    calories += Number(item.data.calories);
+                } else if (item.type === 'gym') {
+                    // Estimate: 5 kcal/min for gym
+                    const duration = parseDurationToMinutes(item.data.duration);
+                    // Default to 45 min if no duration set, to avoid 0 calories for completed workout
+                    const effectiveDuration = duration || 45;
+                    calories += effectiveDuration * 5;
+                }
+            }
         });
-        return calories;
+        return Math.round(calories);
     }, [todayItems]);
 
     const activeExerciseTime = useMemo(() => {
         let minutes = 0;
         todayItems.forEach(item => {
-            // Only count simplified completed items for MVP
             if (item.isCompleted) {
-                if (item.type === 'gym') minutes += 60; // Approx
-                if (item.type === 'run') minutes += 30; // Approx or parse duration
+                if (item.type === 'gym' || item.type === 'run') {
+                    minutes += parseDurationToMinutes(item.data.duration);
+                }
             }
         });
         return minutes;
