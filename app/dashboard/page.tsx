@@ -53,13 +53,29 @@ export default function DashboardPage() {
     } = useGlobalData();
 
     // Financial Data State
-    const [financialData, setFinancialData] = useState({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0 });
+    const [financialData, setFinancialData] = useState<{
+        balance: number;
+        expenses: number;
+        income: number;
+        pendingIncome: number;
+        pendingExpenses: number;
+        nextBill?: any;
+    }>({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0, nextBill: null });
     const [chartData, setChartData] = useState<any[]>([]);
     const [expenseCategoryData, setExpenseCategoryData] = useState<any[]>([]);
     const [accounts, setAccounts] = useState<any[]>([]); // New state
     const [userId, setUserId] = useState<string | null>(null);
 
-    // ... (userId effect)
+    // Authenticate User
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+            }
+        };
+        getUser();
+    }, []);
 
     useEffect(() => {
         if (!userId) return;
@@ -89,6 +105,22 @@ export default function DashboardPage() {
                 let pendingIncome = 0;
                 let confirmedExpenses = 0;
                 let pendingExpenses = 0;
+                let upcomingBillsCount = 0;
+
+                // Future pending transactions (for "Upcoming Bills")
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Get strictly future pending expenses (next 30 days)
+                const futurePending = transactions.filter((t: any) => {
+                    const tDate = new Date(t.date);
+                    return t.type === 'expense' &&
+                        t.confirmed === false &&
+                        tDate >= today;
+                }).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                    .slice(0, 1); // Get the very next one
+
+                const nextBill = futurePending.length > 0 ? futurePending[0] : null;
 
                 monthTransactions.forEach((t: any) => {
                     if (t.type === 'income') {
@@ -105,7 +137,8 @@ export default function DashboardPage() {
                     expenses: confirmedExpenses,
                     income: confirmedIncome,
                     pendingIncome,
-                    pendingExpenses
+                    pendingExpenses,
+                    nextBill: nextBill // Pass this to the state
                 });
 
                 // Chart Data (Daily)
