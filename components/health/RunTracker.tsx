@@ -86,19 +86,8 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
         return R * c;
     };
 
-    const handleAddPoint = (point: LatLng) => {
-        if (isRunning || isFinished) return; // Lock map editing while running
-
-        setPoints(prev => {
-            const newPoints = [...prev, point];
-            // Update distance
-            if (prev.length > 0) {
-                const lastPoint = prev[prev.length - 1];
-                const addedDist = calculateDistance(lastPoint, point);
-                setDistance(d => d + addedDist);
-            }
-            return newPoints;
-        });
+    const handleAddPoint = () => {
+        // Manual point addition disabled
     };
 
     const handleClearPoints = () => {
@@ -183,15 +172,9 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
 
                 {/* Map Section */}
                 <div className="lg:col-span-2 bg-zinc-900 rounded-2xl overflow-hidden relative border border-white/10 min-h-[400px]">
-                    <RunMap points={points} onAddPoint={handleAddPoint} readOnly={isFinished || isRunning} />
+                    <RunMap points={points} onAddPoint={() => { }} readOnly={true} />
 
-                    {!isRunning && !isFinished && points.length > 0 && (
-                        <div className="absolute top-4 right-4 z-[400]">
-                            <Button size="icon" variant="destructive" onClick={handleClearPoints}>
-                                <Trash2 size={18} />
-                            </Button>
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Controls & Stats */}
@@ -265,7 +248,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
 
                     {!isRunning && points.length === 0 && !isFinished && (
                         <div className="text-sm text-zinc-500 text-center p-4">
-                            Toque no mapa ou busque um endereço para começar.
+                            Toque em Iniciar Corrida para começar o rastreamento GPS.
                         </div>
                     )}
                 </div>
