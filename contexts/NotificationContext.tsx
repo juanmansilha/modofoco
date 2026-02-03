@@ -65,30 +65,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         // Show toast
         setToasts(prev => [...prev, { id, title, message, onClose: removeToast }]);
 
-        // System Notification
-        if ("Notification" in window && Notification.permission === "granted") {
-            try {
-                // Check if document is hidden or just always show for prominence
-                // Usually we show if hidden OR if user wants consistent alerts
-                // The user requested ALL notifications.
 
-                // Mobile service worker support is complex, but basic Notification API works
-                // heavily on Android (Chrome) and standard Desktop.
-                // iOS requires PWA install + user interaction context mostly.
-
-                const n = new Notification(title, {
-                    body: message,
-                    icon: '/icons/icon-192x192.png', // Assuming pwa icon exists, fallback handled by browser
-                    badge: '/icons/icon-192x192.png',
-                    tag: 'modofoco-notification', // Overwrites previous if simultaneous? No, keep unique or standard.
-                });
-
-                // Close after a few seconds automatically? System handles this usually.
-                // n.onclick = () => window.focus();
-            } catch (error) {
-                console.error("System notification failed", error);
-            }
-        }
     };
 
     const removeToast = (id: string) => {
