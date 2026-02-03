@@ -24,8 +24,11 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
 
     useEffect(() => {
         setMounted(true);
+        if (userData.falconEnabled) {
+            setStep("success");
+        }
         return () => setMounted(false);
-    }, []);
+    }, [userData.falconEnabled]);
 
     if (!isOpen) return null;
 
