@@ -301,37 +301,41 @@ export async function syncLocalToSupabase(
 }
 // ============ TRANSFERS ============
 
-export async function transferFunds(
+// ============ TRANSFERS & INVOICE PAYMENTS ============
+
+export async function createTransferTransaction(
     userId: string,
     fromAccountId: string,
     toAccountId: string,
     amount: number,
     date: string,
-    description: string = "Transferência entre contas"
+    description: string,
+    confirmed: boolean = true,
+    category: string = "Transferência"
 ): Promise<void> {
 
     // 1. Transaction Out (Source)
     const expenseTx: any = {
         user_id: userId,
         account_id: fromAccountId,
-        description: `Transferência para outra conta`,
+        description: description,
         amount: amount,
         type: 'expense',
-        category: 'Transferência',
+        category: category,
         date: date,
-        confirmed: true
+        confirmed: confirmed
     };
 
     // 2. Transaction In (Destination)
     const incomeTx: any = {
         user_id: userId,
         account_id: toAccountId,
-        description: `Transferência recebida`,
+        description: category === "Pagamento de Fatura" ? `Pagamento Recebido` : `Transferência Recebida`,
         amount: amount,
         type: 'income',
-        category: 'Transferência',
+        category: category,
         date: date,
-        confirmed: true
+        confirmed: confirmed
     };
 
     // Execute both inserts
@@ -340,9 +344,15 @@ export async function transferFunds(
 
     const { error: error2 } = await supabase.from('finance_transactions').insert([incomeTx]);
     if (error2) throw error2;
+}
 
-    // Accounts balances will be auto-calculated by the UI based on transaction history or triggers if they exist.
-    // However, if we store balance in accounts table, we should update them too.
-    // Assuming UI recalculates or we trigger an update. Ideally use an RPC or triggers.
-    // For now, simple inserts.
+export async function transferFunds(
+    userId: string,
+    fromAccountId: string,
+    toAccountId: string,
+    amount: number,
+    date: string,
+    description: string = "Transferência entre contas"
+): Promise<void> {
+    return createTransferTransaction(userId, fromAccountId, toAccountId, amount, date, description, true, "Transferência");
 }

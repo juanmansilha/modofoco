@@ -243,7 +243,24 @@ export default function FinancePage() {
     const handleSaveTransaction = async (transactionData: any) => {
         if (!userId) return;
         try {
-            if (editingTransaction) {
+            if (transactionData.targetAccountId && transactionData.type === 'expense') {
+                // Invoice Payment / Transfer Logic
+                await SupabaseFinance.createTransferTransaction(
+                    userId,
+                    transactionData.accountId,
+                    transactionData.targetAccountId,
+                    transactionData.amount,
+                    transactionData.date,
+                    transactionData.description,
+                    transactionData.confirmed,
+                    "Pagamento de Fatura"
+                );
+                // We don't have a single "created" object to add to state easily because we created two.
+                // It's safer to just refresh the list.
+                const updatedTransactions = await SupabaseFinance.getFinanceTransactions(userId);
+                setTransactions(updatedTransactions);
+                awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Pagamento de Fatura Agendado");
+            } else if (editingTransaction) {
                 const updated = await SupabaseFinance.updateFinanceTransaction(editingTransaction.id, {
                     ...transactionData,
                     user_id: userId
