@@ -22,6 +22,12 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [isConfirmed, setIsConfirmed] = useState(true);
 
+    // Recurrence State
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [frequency, setFrequency] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
+    const [recurrenceType, setRecurrenceType] = useState<'fixed' | 'indefinite'>('fixed');
+    const [installments, setInstallments] = useState(12);
+
     useEffect(() => {
         if (isOpen && initialData) {
             setDescription(initialData.description);
@@ -41,6 +47,10 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             setIsConfirmed(true);
             if (accounts.length > 0) setAccountId(accounts[0].id);
             setDate(new Date().toISOString().split('T')[0]);
+            setIsRecurring(false);
+            setFrequency('monthly');
+            setRecurrenceType('fixed');
+            setInstallments(12);
         }
     }, [isOpen, initialData, accounts]);
 
@@ -60,7 +70,12 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             accountId,
             // Append a specific time (noon) to avoid timezone shifts when saving to UTC
             date: `${date}T12:00:00`,
-            confirmed: isConfirmed
+            confirmed: isConfirmed,
+            recurrence: isRecurring ? {
+                frequency,
+                type: recurrenceType,
+                installments: recurrenceType === 'fixed' ? installments : 12 // Default to 12 for indefinite logic in parent
+            } : null
         });
         onClose();
     };
@@ -193,6 +208,77 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
                                         <span className="ml-3 text-sm font-medium text-zinc-400">Pendente?</span>
                                     </label>
                                 </div>
+                            </div>
+
+                            {/* Recurrence Options */}
+                            <div className="bg-zinc-900/50 p-4 rounded-xl border border-white/5 space-y-4">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <div className="relative flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={isRecurring}
+                                            onChange={(e) => setIsRecurring(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    </div>
+                                    <span className="text-sm font-medium text-white">Essa transação se repete?</span>
+                                </label>
+
+                                {isRecurring && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="space-y-4 pt-2 overflow-hidden"
+                                    >
+                                        <div>
+                                            <label className="block text-xs text-zinc-400 mb-1 uppercase tracking-wider">Frequência</label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {['monthly', 'weekly', 'daily'].map((freq) => (
+                                                    <button
+                                                        key={freq}
+                                                        type="button"
+                                                        onClick={() => setFrequency(freq as any)}
+                                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${frequency === freq
+                                                            ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                                                            : "bg-zinc-800 text-zinc-400 border border-transparent hover:bg-zinc-700"
+                                                            }`}
+                                                    >
+                                                        {freq === 'monthly' ? 'Mensal' : freq === 'weekly' ? 'Semanal' : 'Diário'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs text-zinc-400 mb-1 uppercase tracking-wider">Duração</label>
+                                                <select
+                                                    value={recurrenceType}
+                                                    onChange={(e) => setRecurrenceType(e.target.value as any)}
+                                                    className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                                >
+                                                    <option value="fixed">Definir vezes</option>
+                                                    <option value="indefinite">Indeterminado</option>
+                                                </select>
+                                            </div>
+                                            {recurrenceType === 'fixed' && (
+                                                <div>
+                                                    <label className="block text-xs text-zinc-400 mb-1 uppercase tracking-wider">Quantidade</label>
+                                                    <input
+                                                        type="number"
+                                                        min="2"
+                                                        max="120"
+                                                        value={installments}
+                                                        onChange={(e) => setInstallments(parseInt(e.target.value))}
+                                                        className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
 
                             <button

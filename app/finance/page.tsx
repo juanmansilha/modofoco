@@ -244,18 +244,66 @@ export default function FinancePage() {
         if (!userId) return;
         try {
             if (editingTransaction) {
+                // Editing (Singular for now, unless we implement complex "edit all" later)
                 const updated = await SupabaseFinance.updateFinanceTransaction(editingTransaction.id, {
                     ...transactionData,
                     user_id: userId
                 });
                 setTransactions(transactions.map(t => t.id === editingTransaction.id ? updated : t));
             } else {
-                const created = await SupabaseFinance.createFinanceTransaction({
-                    ...transactionData,
-                    user_id: userId
-                });
-                setTransactions([created, ...transactions]);
-                awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Movimentação Financeira");
+                // Creation
+                const { recurrence, ...baseTransaction } = transactionData;
+                const newTransactions = [];
+
+                if (recurrence) {
+                    // Generate multiple transactions
+                    const count = recurrence.type === 'indefinite' ? 12 : recurrence.installments;
+                    const startDate = new Date(baseTransaction.date);
+
+                    for (let i = 0; i < count; i++) {
+                        let nextDate = new Date(startDate);
+
+                        // Calculate Date
+                        if (recurrence.frequency === 'monthly') {
+                            nextDate = addMonths(startDate, i);
+                        } else if (recurrence.frequency === 'weekly') {
+                            nextDate.setDate(startDate.getDate() + (i * 7));
+                        } else if (recurrence.frequency === 'daily') {
+                            nextDate.setDate(startDate.getDate() + i);
+                        }
+
+                        // Status Logic:
+                        // First one (i=0) takes the user's choice (baseTransaction.confirmed).
+                        // Future ones are forced to be PENDING (confirmed: false), as they are future bills/income.
+                        const isFirst = i === 0;
+                        const status = isFirst ? baseTransaction.confirmed : false;
+
+                        newTransactions.push({
+                            ...baseTransaction,
+                            description: recurrence.type === 'fixed' ? `${baseTransaction.description} (${i + 1}/${count})` : baseTransaction.description,
+                            date: nextDate.toISOString(), // Keep time
+                            confirmed: status,
+                            user_id: userId
+                        });
+                    }
+
+                    // Save all
+                    await Promise.all(newTransactions.map(t => SupabaseFinance.createFinanceTransaction(t)));
+
+                    // Optimistic update (adding all might clutter, maybe just fetch fresh)
+                    const updatedTransactions = await SupabaseFinance.getFinanceTransactions(userId);
+                    setTransactions(updatedTransactions);
+                    awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Série de Transações");
+
+                } else {
+                    // Single Transaction
+                    const created = await SupabaseFinance.createFinanceTransaction({
+                        ...baseTransaction,
+                        user_id: userId
+                    });
+                    setTransactions([created, ...transactions]);
+                    awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Movimentação Financeira");
+                }
             }
 
             // Refresh accounts to reflect balance changes
