@@ -23,14 +23,28 @@ interface RunTrackerProps {
 
 export function RunTracker({ onBack, onSave }: RunTrackerProps) {
     const [points, setPoints] = useState<LatLng[]>([]);
+    const [actualPath, setActualPath] = useState<LatLng[]>([]); // GPS Path
     const [distance, setDistance] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [time, setTime] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
 
+    // Address Search State
+    const [startQuery, setStartQuery] = useState("");
+    const [endQuery, setEndQuery] = useState("");
+
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const watchIdRef = useRef<number | null>(null);
     const resultRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotifications();
+
+    // Lazy import for geocoding to avoid server-side issues
+    // We use require here inside component scope or just imported normally if it was a component,
+    // but since it's a lib function we can import it at top or require it. 
+    // Let's use standard import if possible, but the instruction suggested lazy.
+    // Actually, let's just use the function directly if imported at top, but since we didn't add import at top...
+    // I will add the import line at the top in a separate edit if needed, or just use require here.
+    const { searchAddress } = require("@/lib/geocoding");
 
     // Timer Logic
     useEffect(() => {
@@ -182,7 +196,11 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             {!isRunning ? (
                                 <Button
                                     className="col-span-2 bg-emerald-600 hover:bg-emerald-500 text-white py-6"
-                                    onClick={() => setIsRunning(true)}
+                                    onClick={() => {
+                                        setIsRunning(true);
+                                        setDistance(0); // Reset distance to track ACTUAL run from 0
+                                        setActualPath([]); // Reset actual path
+                                    }}
                                 >
                                     <Play fill="currentColor" className="mr-2" /> Iniciar Corrida
                                 </Button>
@@ -216,7 +234,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
 
                     {!isRunning && points.length === 0 && !isFinished && (
                         <div className="text-sm text-zinc-500 text-center p-4">
-                            Toque no mapa para traçar sua rota antes de começar.
+                            Toque no mapa ou busque um endereço para começar.
                         </div>
                     )}
                 </div>
