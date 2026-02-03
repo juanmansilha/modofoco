@@ -61,7 +61,8 @@ export function FinancialSummaryCard({ financialData, categoryData }: FinancialS
                 <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Gastos por Categoria</p>
                 <div className="space-y-3">
                     {categoryData.slice(0, 5).map((cat, idx) => {
-                        const percent = financialData.expenses > 0 ? (cat.value / financialData.expenses) * 100 : 0;
+                        const totalExpenses = financialData.expenses + financialData.pendingExpenses;
+                        const percent = totalExpenses > 0 ? (cat.value / totalExpenses) * 100 : 0;
                         return (
                             <div key={idx} className="flex items-center gap-3">
                                 <div
