@@ -35,9 +35,11 @@ export default function OneSignalSetup() {
                     },
                 }).then(() => {
                     console.log("✅ OneSignal Initialized Successfully");
-                    OneSignal.getUserId().then((userId) => {
-                        console.log("✅ OneSignal User ID:", userId);
-                    });
+                    // Check subscription status
+                    if (OneSignal.User && OneSignal.User.PushSubscription) {
+                        console.log("✅ OneSignal Subscription ID:", OneSignal.User.PushSubscription.id);
+                        console.log("✅ OneSignal Opted In:", OneSignal.User.PushSubscription.optedIn);
+                    }
                 });
 
                 // Force prompt again just in case
