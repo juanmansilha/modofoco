@@ -13,7 +13,6 @@ import { TransferModal } from "@/components/finance/TransferModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
 import { MonthlyHistoryChart } from "@/components/finance/MonthlyHistoryChart";
-import { FinancialHealthCard } from "@/components/finance/FinancialHealthCard";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
@@ -417,7 +416,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
@@ -455,9 +454,6 @@ export default function FinancePage() {
                             </div>
                         )}
                     </div>
-
-                    {/* NEW: Financial Health Card */}
-                    <FinancialHealthCard transactions={transactions} currentMonth={currentMonth} />
                 </div>
 
                 {/* Charts Area */}
