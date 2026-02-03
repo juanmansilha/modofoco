@@ -11,6 +11,7 @@ import { TransactionList } from "@/components/finance/TransactionList";
 import { TransactionModal } from "@/components/finance/TransactionModal";
 import { TransferModal } from "@/components/finance/TransferModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
+import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
@@ -112,6 +113,47 @@ export default function FinancePage() {
             return date >= start && date <= end;
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [transactions, currentMonth]);
+
+    const expenseCategoryData = useMemo(() => {
+        const expenses = filteredTransactions.filter(t => t.type === 'expense');
+        const categoryMap = new Map();
+
+        expenses.forEach(t => {
+            const current = categoryMap.get(t.category) || 0;
+            categoryMap.set(t.category, current + t.amount);
+        });
+
+        const data: any[] = [];
+        categoryMap.forEach((amount, categoryName) => {
+            const categoryDef = categories.find(c => c.name === categoryName);
+            // Default color if not found
+            let color = "#71717a"; // zinc-500
+            if (categoryDef) {
+                const colorMap: Record<string, string> = {
+                    "bg-emerald-500": "#10b981",
+                    "bg-green-500": "#22c55e",
+                    "bg-orange-500": "#f97316",
+                    "bg-blue-500": "#3b82f6",
+                    "bg-purple-500": "#a855f7",
+                    "bg-pink-500": "#ec4899",
+                    "bg-red-500": "#ef4444",
+                    "bg-indigo-500": "#6366f1",
+                    "bg-yellow-500": "#eab308",
+                    "bg-cyan-500": "#06b6d4",
+                    "bg-teal-500": "#14b8a6",
+                    "bg-lime-500": "#84cc16",
+                    "bg-fuchsia-500": "#d946ef",
+                    "bg-rose-500": "#f43f5e",
+                    "bg-slate-500": "#64748b",
+                    "bg-zinc-500": "#71717a",
+                };
+                color = colorMap[categoryDef.color] || categoryDef.color;
+            }
+            data.push({ name: categoryName, value: amount, color });
+        });
+
+        return data.sort((a, b) => b.value - a.value);
+    }, [filteredTransactions, categories]);
 
     const stats = useMemo(() => {
         return filteredTransactions.reduce((acc, curr) => {
@@ -325,7 +367,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
@@ -336,54 +378,60 @@ export default function FinancePage() {
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><TrendingUp size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Entradas</span>
+                            <span className="text-zinc-400 text-sm">Entradas Confirmadas</span>
                         </div>
                         <p className="text-2xl font-bold text-white">{stats.confirmedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                         {stats.pendingIncome > 0 && (
-                            <p className="text-xs text-zinc-500 mt-1">
-                                + {stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} pendente
-                            </p>
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                <p className="text-xs text-zinc-400">
+                                    <span className="text-amber-500 font-bold">{stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> pendente
+                                </p>
+                            </div>
                         )}
                     </div>
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Saídas</span>
+                            <span className="text-zinc-400 text-sm">Saídas Confirmadas</span>
                         </div>
                         <p className="text-2xl font-bold text-white">{stats.confirmedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                         {stats.pendingExpense > 0 && (
-                            <p className="text-xs text-zinc-500 mt-1">
-                                + {stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} pendente
-                            </p>
-                        )}
-                    </div>
-                    <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-amber-500/10 text-amber-500 rounded-lg">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                <p className="text-xs text-zinc-400">
+                                    <span className="text-amber-500 font-bold">{stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> pendente
+                                </p>
                             </div>
-                            <span className="text-amber-400 text-sm">Pendentes</span>
-                        </div>
-                        <p className="text-2xl font-bold text-amber-400">
-                            {(stats.pendingIncome + stats.pendingExpense).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </p>
-                        <p className="text-xs text-amber-500/60 mt-1">
-                            {stats.pendingIncome > 0 && `↑ ${stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
-                            {stats.pendingIncome > 0 && stats.pendingExpense > 0 && ' • '}
-                            {stats.pendingExpense > 0 && `↓ ${stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
-                        </p>
+                        )}
                     </div>
                 </div>
 
-                {/* Chart */}
-                <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
-                    <h3 className="text-lg font-bold text-white mb-6">Fluxo de Caixa</h3>
-                    <FinanceChart data={chartData} />
-                </section>
+                {/* Charts Area */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Charts Area */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Cash Flow Chart */}
+                        <section className="col-span-1 lg:col-span-2 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                            <h3 className="text-lg font-bold text-white mb-6">Fluxo de Caixa</h3>
+                            <FinanceChart data={chartData} />
+                        </section>
 
-                {/* Main Grid */}
+                        {/* Expenses Chart */}
+                        <section className="col-span-1 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                            <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
+                            <ExpensePieChart data={expenseCategoryData} />
+                        </section>
+                    </div>
+
+                    {/* Expenses Chart */}
+                    <section className="col-span-1 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                        <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
+                        <ExpensePieChart data={expenseCategoryData} />
+                    </section>
+                </div>
+
+                {/* Main Grid: Accounts & Transactions */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Accounts Column */}
                     <div className="space-y-4">
