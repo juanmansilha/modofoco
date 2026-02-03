@@ -99,8 +99,8 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
 
                             {/* Bank Presets */}
                             <div>
-                                <label className="block text-sm text-zinc-400 mb-2">Bancos Populares</label>
-                                <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                                <label className="block text-sm text-zinc-400 mb-3">Selecione a Instituição</label>
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
                                     {[
                                         { name: "Nubank", color: "#820ad1", logo: "/banks/nubank.png" },
                                         { name: "Banco do Brasil", color: "#fbfd00", logo: "/banks/bb.png" },
@@ -118,13 +118,13 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                                 setColor(bank.color);
                                                 setLogoUrl(bank.logo);
                                             }}
-                                            className="flex flex-col items-center gap-1 min-w-[70px] group"
+                                            className="flex flex-col items-center gap-2 group"
                                         >
-                                            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1 border border-white/10 group-hover:border-indigo-500 transition-colors relative overflow-hidden">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center p-2 border transition-all relative overflow-hidden bg-white ${name === bank.name ? 'border-indigo-500 ring-2 ring-indigo-500/50' : 'border-white/10 group-hover:border-white/30'}`}>
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain" />
                                             </div>
-                                            <span className="text-[10px] text-zinc-400 text-center truncate w-full">{bank.name}</span>
+                                            <span className="text-[10px] font-medium text-zinc-400 text-center truncate w-full group-hover:text-white transition-colors">{bank.name}</span>
                                         </button>
                                     ))}
                                 </div>
