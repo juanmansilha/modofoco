@@ -14,18 +14,24 @@ interface AccountModalProps {
 export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountModalProps) {
     const [name, setName] = useState("");
     const [balance, setBalance] = useState("");
+    const [creditLimit, setCreditLimit] = useState("");
+    const [accountLimit, setAccountLimit] = useState("");
     const [type, setType] = useState("bank");
     const [color, setColor] = useState("#3b82f6");
 
     useEffect(() => {
         if (isOpen && initialData) {
             setName(initialData.name);
-            setBalance(initialData.balance.toString());
+            setBalance(initialData.balance?.toString() || "");
+            setCreditLimit(initialData.credit_limit?.toString() || "");
+            setAccountLimit(initialData.account_limit?.toString() || "");
             setType(initialData.type);
             setColor(initialData.color);
         } else {
             setName("");
             setBalance("");
+            setCreditLimit("");
+            setAccountLimit("");
             setType("bank");
             setColor("#3b82f6");
         }
@@ -36,6 +42,8 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
         onSave({
             name,
             balance: parseFloat(balance) || 0,
+            credit_limit: parseFloat(creditLimit) || 0,
+            account_limit: parseFloat(accountLimit) || 0,
             type,
             color
         });
@@ -82,7 +90,7 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                             </div>
 
                             <div>
-                                <label className="block text-sm text-zinc-400 mb-1">Saldo Atual</label>
+                                <label className="block text-sm text-zinc-400 mb-1">Saldo Atual / Inicial</label>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -90,8 +98,34 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                     onChange={(e) => setBalance(e.target.value)}
                                     className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                     placeholder="R$ 0,00"
-                                    required
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-zinc-400 mb-1">Limite da Conta (Opcional)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={accountLimit}
+                                        onChange={(e) => setAccountLimit(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        placeholder="R$ 0,00"
+                                    />
+                                    <p className="text-[10px] text-zinc-500 mt-1">Ex: Cheque Especial</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-zinc-400 mb-1">Limite de Crédito (Opcional)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={creditLimit}
+                                        onChange={(e) => setCreditLimit(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        placeholder="R$ 0,00"
+                                    />
+                                    <p className="text-[10px] text-zinc-500 mt-1">Ex: Cartão</p>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

@@ -232,6 +232,8 @@ CREATE TABLE IF NOT EXISTS public.finance_accounts (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     name TEXT NOT NULL,
     balance NUMERIC DEFAULT 0,
+    credit_limit NUMERIC DEFAULT 0, -- Limite do Cartão
+    account_limit NUMERIC DEFAULT 0, -- Limite da Conta / Cheque Especial
     type TEXT,
     color TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
