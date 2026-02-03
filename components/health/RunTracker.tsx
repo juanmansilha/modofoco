@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Play, Pause, Square, Share2, MapPin, Trash2, ArrowLeft } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
+import { getStaticMapUrl } from "@/lib/google-maps";
 
 // Dynamic import for Leaflet map to avoid SSR issues
 const RunMap = dynamic(() => import("./RunMap"), { ssr: false });
@@ -119,17 +120,12 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
 
 
 
-            // Wait a bit for any re-fetches or re-renders
-            await new Promise(resolve => setTimeout(resolve, 2500));
-
-            // Generate Image using html2canvas
-            const canvas = await html2canvas(shareRef.current, {
-                useCORS: true,
-                allowTaint: true,
+            // Generate Image
+            const dataUrl = await toPng(shareRef.current, {
+                cacheBust: true,
                 backgroundColor: '#09090b',
-                scale: 2, // Higher quality, usually fine with html2canvas
+                pixelRatio: 2, // 2x verified to work fine on simple DOM elements
             });
-            const dataUrl = canvas.toDataURL("image/png");
 
             // Check if Web Share API is supported (Mobile)
             if (navigator.share) {
@@ -288,7 +284,6 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
             </div>
 
             {/* Social Share Modal */}
-            {/* Social Share Modal */}
             {isShareModalOpen && (
                 <div className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="flex flex-col gap-4 max-h-[90vh]">
@@ -306,14 +301,19 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-zinc-950 to-orange-900/20 pointer-events-none" />
 
                             {/* Map Top (60%) */}
-                            <div className="h-[60%] relative bg-[#1a1a1a]">
-                                <RunMap
-                                    points={points}
-                                    actualPath={actualPath}
-                                    onAddPoint={() => { }}
-                                    readOnly={true}
-                                    userLocation={actualPath.length > 0 ? actualPath[actualPath.length - 1] : undefined}
-                                />
+                            <div className="h-[60%] relative bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
+                                {points.length > 0 ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img
+                                        src={getStaticMapUrl(actualPath.length > 0 ? actualPath : points, 640, 640)} // 2x resolution for retina
+                                        alt="Running Path"
+                                        className="w-full h-full object-cover"
+                                        crossOrigin="anonymous" // Important for canvas capture
+                                    />
+                                ) : (
+                                    <div className="text-zinc-500 text-xs text-center p-4">Sem dados de mapa</div>
+                                )}
+
                                 {/* Map Overlay Gradient */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent pointer-events-none z-[400]" />
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-[400]" />
