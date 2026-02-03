@@ -9,7 +9,7 @@ export async function POST(request: Request) {
         }
 
         const baseUrl = process.env.EVO_API_URL || "https://evolution.fyreoficial.com.br";
-        const apiKey = process.env.EVO_API_KEY || "99F6F0B011E7-405A-AF3B-2E54BF6122CE";
+        const apiKey = process.env.EVO_API_KEY || "KS2rnpBe7QXyj0pnGOOPAqBDBjC0r0UM";
         const instance = process.env.EVO_INSTANCE_NAME || "e4c95af7-66f4-4c5a-bb47-1aab48731eb0";
 
         if (!baseUrl || !apiKey || !instance) {
