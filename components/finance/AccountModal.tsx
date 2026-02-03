@@ -151,12 +151,21 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                 </div>
                                 <div>
                                     <label className="block text-sm text-zinc-400 mb-1">Cor</label>
-                                    <input
-                                        type="color"
-                                        value={color}
-                                        onChange={(e) => setColor(e.target.value)}
-                                        className="w-full h-[46px] bg-zinc-900 border border-white/10 rounded-xl cursor-pointer"
-                                    />
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <input
+                                                type="color"
+                                                value={color}
+                                                onChange={(e) => setColor(e.target.value)}
+                                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                                            />
+                                            <div
+                                                className="w-11 h-11 rounded-full border-2 border-white/20 shadow-lg"
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        </div>
+                                        <span className="text-xs text-zinc-500">Clique para alterar</span>
+                                    </div>
                                 </div>
                             </div>
 
