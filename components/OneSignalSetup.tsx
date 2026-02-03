@@ -10,7 +10,7 @@ export default function OneSignalSetup() {
                 await OneSignal.init({
                     appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || "b07caf1d-c550-4072-8f07-7cd960fa45c1",
                     allowLocalhostAsSecureOrigin: true, // Needed for simple dev environments if not https
-                    autoRegister: true,
+                    autoRegister: true, // Tries to auto-prompt
                     notifyButton: {
                         enable: true,
                         size: 'medium',
@@ -33,10 +33,14 @@ export default function OneSignalSetup() {
                         },
                         prenotify: true,
                     },
+                }).then(() => {
+                    console.log("✅ OneSignal Initialized Successfully");
+                    OneSignal.getUserId().then((userId) => {
+                        console.log("✅ OneSignal User ID:", userId);
+                    });
                 });
 
-                // Request permission immediately on load? Or wait for user action?
-                // Usually good practice to let the OneSignal Prompt handle it or do it on interaction.
+                // Force prompt again just in case
                 OneSignal.Slidedown.promptPush();
             } catch (error) {
                 console.error("Error Initializing OneSignal", error);
