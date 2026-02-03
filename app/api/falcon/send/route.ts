@@ -49,7 +49,11 @@ export async function POST(request: Request) {
 
         if (!response.ok) {
             console.error("Evolution API Error:", data);
-            return NextResponse.json({ error: data.message || 'Failed to send message' }, { status: response.status });
+            return NextResponse.json({
+                error: `Evo Error: ${data.message || response.statusText}`,
+                details: data,
+                url_attempted: url // Return this so we can see if the instance name is wrong
+            }, { status: response.status });
         }
 
         return NextResponse.json({ success: true, data });

@@ -55,7 +55,15 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
 
             if (!response.ok) {
                 const err = await response.json();
-                alert(`Erro de conexão: ${err.error || "Verifique o servidor Evo"}`);
+                console.log("Error details:", err);
+
+                // Check if it's a 404 on the Instance
+                if (response.status === 404) {
+                    alert(`Erro 404: A Instância '${err.url_attempted?.split('/').pop()}' não foi encontrada. Verifique o NOME EXATO da instância no painel.`);
+                } else {
+                    alert(`Erro: ${err.error}`);
+                }
+
                 setIsLoading(false);
                 return;
             }
@@ -101,8 +109,8 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
     if (!mounted) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 h-[100dvh] w-screen z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative shadow-2xl">
 
                 {/* Close Button */}
                 <button
