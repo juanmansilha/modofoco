@@ -67,6 +67,18 @@ function MapEvents({ onAddPoint, readOnly }: { onAddPoint: (p: LatLng) => void, 
     return null;
 }
 
+// Fix for map rendering issues in modals/hidden containers
+function MapResizer() {
+    const map = useMapEvents({});
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+        return () => clearTimeout(timeout);
+    }, [map]);
+    return null;
+}
+
 export default function RunMap({ points, actualPath = [], onAddPoint, readOnly = false, userLocation }: RunMapProps) {
     const defaultCenter = { lat: -23.55052, lng: -46.633309 }; // Sao Paulo fallback
 
@@ -91,7 +103,7 @@ export default function RunMap({ points, actualPath = [], onAddPoint, readOnly =
             />
 
             <LocationMarker userLocation={userLocation} />
-
+            <MapResizer />
             <MapEvents onAddPoint={onAddPoint} readOnly={readOnly} />
 
             {/* Start Marker */}

@@ -118,7 +118,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
             });
 
             // Wait a bit for any re-fetches or re-renders
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 2500));
 
             // Generate Image
             const dataUrl = await toPng(shareRef.current, {
