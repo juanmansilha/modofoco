@@ -43,11 +43,36 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
     }, []);
 
-    // Request notification permission on mount
+    // Request permission on mount (Desktop usually allows)
+    // AND on first interaction (Mobile requires user gesture)
     useEffect(() => {
-        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
+        const handleInteraction = () => {
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        };
+
+        // Try immediately (Desktop)
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission().catch(() => {
+                // Ignore error, likely blocked by browser needing gesture
+            });
         }
+
+        // Add listener for mobile support
+        document.addEventListener('click', handleInteraction, { once: true });
+        document.addEventListener('touchstart', handleInteraction, { once: true });
+
+        // 7 Minute Test Notification (Requested by User)
+        const timer = setTimeout(() => {
+            addNotification("Teste de Notificação", "7 minutos se passaram! O sistema de alerta está funcionando.");
+        }, 7 * 60 * 1000); // 7 minutes
+
+        return () => {
+            document.removeEventListener('click', handleInteraction);
+            document.removeEventListener('touchstart', handleInteraction);
+            clearTimeout(timer);
+        };
     }, []);
 
     // Save to localStorage whenever notifications change
