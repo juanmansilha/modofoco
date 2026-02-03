@@ -302,7 +302,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
 
                             {/* Map Top (60%) */}
                             <div className="h-[60%] relative bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
-                                {points.length > 0 ? (
+                                {(points.length > 0 || actualPath.length > 0) ? (
                                     /* eslint-disable-next-line @next/next/no-img-element */
                                     <img
                                         src={getStaticMapUrl(actualPath.length > 0 ? actualPath : points, 640, 640)} // 2x resolution for retina
@@ -311,7 +311,10 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                                         crossOrigin="anonymous" // Important for canvas capture
                                     />
                                 ) : (
-                                    <div className="text-zinc-500 text-xs text-center p-4">Sem dados de mapa</div>
+                                    <div className="text-zinc-500 text-xs text-center p-4">
+                                        Sem dados de mapa<br />
+                                        <span className="text-[10px] opacity-70">(Adicione pontos ou inicie a corrida)</span>
+                                    </div>
                                 )}
 
                                 {/* Map Overlay Gradient */}
