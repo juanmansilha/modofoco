@@ -8,9 +8,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Phone and message are required' }, { status: 400 });
         }
 
-        const baseUrl = process.env.EVO_API_URL;
-        const apiKey = process.env.EVO_API_KEY;
-        const instance = process.env.EVO_INSTANCE_NAME;
+        const baseUrl = process.env.EVO_API_URL || "https://evolution.fyreoficial.com.br";
+        const apiKey = process.env.EVO_API_KEY || "99F6F0B011E7-405A-AF3B-2E54BF6122CE";
+        const instance = process.env.EVO_INSTANCE_NAME || "e4c95af7-66f4-4c5a-bb47-1aab48731eb0";
 
         if (!baseUrl || !apiKey || !instance) {
             console.error("Evolution API credentials missing in .env.local");

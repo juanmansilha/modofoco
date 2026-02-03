@@ -19,10 +19,10 @@ export function FalconIcon() {
             <button
                 onClick={() => setIsModalOpen(true)}
                 className={cn(
-                    "relative p-2 rounded-full transition-all duration-300",
+                    "relative p-2 rounded-full transition-all duration-300 z-50",
                     isEnabled
                         ? "text-green-500 hover:bg-green-500/10"
-                        : "text-zinc-400 hover:text-white"
+                        : "text-zinc-400 hover:text-white bg-zinc-800/50" // Added bg to make it pop if unconfigured
                 )}
                 title={isEnabled ? "Falcon Ativo" : "Configurar Falcon (WhatsApp)"}
             >
