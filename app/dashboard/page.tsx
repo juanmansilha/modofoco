@@ -111,6 +111,7 @@ export default function DashboardPage() {
                 // Future pending transactions (for "Upcoming Bills")
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
+                const todayStr = format(today, 'yyyy-MM-dd');
 
                 // Get strictly future pending expenses (next 30 days)
                 const futurePending = transactions.filter((t: any) => {
