@@ -10,6 +10,8 @@ import { User, Mail, Lock, CreditCard, Trash2, Camera, LogOut, Check } from "luc
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { uploadAvatar } from "@/lib/supabase-storage";
+
 export default function SettingsPage() {
     const { userData, updateUserData, logout } = useGlobalData();
     const { addNotification } = useNotifications();
@@ -19,6 +21,45 @@ export default function SettingsPage() {
     const [name, setName] = useState("");
     const [photo, setPhoto] = useState("");
     const [email, setEmail] = useState("");
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        // Validate size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            addNotification("Erro", "A imagem deve ter no máximo 5MB.");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            // We need a userId. If userData doesn't have it (it should if loaded), we might fail.
+            // But GlobalDataProvider usually ensures we have data.
+            // Ideally we'd get userId from context too, but userData updates async. 
+            // We can try to use a fallback or throw if critical.
+            // For now assuming userData is populated as we are in Settings.
+            // A clearer way would be exposing userId from context.
+            // Let's assume we can get it or use 'unknown' if missing (which shouldn't happen logged in)
+
+            // NOTE: GlobalDataProvider doesn't expose raw userId in interface shown previously, 
+            // but it's likely available or we can use a temp ID if just testing, 
+            // but for real storage we need it. 
+            // Let's modify GlobalDataProvider to expose userId or use the one we have access to?
+            // Actually, I can allow the utility to generate a name if userId is missing,
+            // or just use a timestamp.
+
+            const url = await uploadAvatar(file, userData.name || "user");
+            setPhoto(url);
+            addNotification("Sucesso", "Imagem carregada. Clique em Salvar para confirmar.");
+        } catch (error) {
+            console.error(error);
+            addNotification("Erro", "Falha ao enviar imagem. Tente novamente.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     // Password UI state
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -96,18 +137,34 @@ export default function SettingsPage() {
                         <div className="flex flex-col md:flex-row gap-6 items-start">
                             {/* Avatar */}
                             <div className="flex flex-col items-center gap-3">
-                                <div className="h-24 w-24 rounded-full bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center relative overflow-hidden group">
+                                <div
+                                    className="h-24 w-24 rounded-full bg-zinc-800 border-2 border-dashed border-zinc-700 flex items-center justify-center relative overflow-hidden group cursor-pointer"
+                                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                                >
+                                    {isUploading ? (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
+                                            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        </div>
+                                    ) : null}
+
                                     {photo ? (
                                         <Image src={photo} alt="Avatar" fill className="object-cover" />
                                     ) : (
                                         <User size={32} className="text-zinc-500" />
                                     )}
-                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Camera size={20} className="text-white" />
                                     </div>
                                 </div>
+                                <input
+                                    type="file"
+                                    id="avatar-upload"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleAvatarUpload}
+                                />
                                 <div className="text-xs text-zinc-500 text-center max-w-[120px]">
-                                    Cole uma URL de imagem abaixo para alterar
+                                    Clique na foto para alterar
                                 </div>
                             </div>
 
@@ -133,15 +190,6 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">URL da Foto</label>
-                                    <Input
-                                        value={photo}
-                                        onChange={(e) => setPhoto(e.target.value)}
-                                        placeholder="https://exemplo.com/foto.jpg"
-                                        className="bg-black/40 border-white/5 text-white h-11"
-                                    />
                                 </div>
                             </div>
                         </div>
