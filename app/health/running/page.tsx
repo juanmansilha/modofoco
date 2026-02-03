@@ -7,12 +7,13 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { WeeklyCalendar } from "@/components/health/WeeklyCalendar";
 import { RunModal } from "@/components/health/RunModal";
-import { MapPin, Flame, Play, Trophy, Check, CheckCircle2, MoreVertical, PenSquare, Trash2, Clock } from "lucide-react";
+import { MapPin, Flame, Play, Trophy, Check, CheckCircle2, MoreVertical, PenSquare, Trash2, Clock, Map as MapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useGamification } from "@/contexts/GamificationContext";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
 import { FOCO_POINTS } from "@/lib/gamification";
+import { RunTracker } from "@/components/health/RunTracker";
 
 // Note: Ensure this matches GlobalDataProvider
 export interface RunSession {
@@ -30,6 +31,7 @@ export default function RunningPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRun, setEditingRun] = useState<RunSession | null>(null);
+    const [isTrackingMode, setIsTrackingMode] = useState(false);
 
     const { runSessions, addRunSession, updateRunSession, deleteRunSession, toggleRunCompletion } = useGlobalData();
     const { addNotification } = useNotifications();
@@ -92,6 +94,23 @@ export default function RunningPage() {
         setIsModalOpen(false);
     };
 
+    const handleSaveTracker = (data: { dist: number; duration: string; calories: number }) => {
+        const newRun: RunSession = {
+            id: Math.random().toString(),
+            title: "Corrida com Mapa",
+            date: format(new Date(), "yyyy-MM-dd"),
+            time: format(new Date(), "HH:mm"),
+            dist: data.dist,
+            duration: data.duration,
+            calories: data.calories,
+            completed: true
+        };
+        addRunSession(newRun);
+        addNotification("Treino Salvo!", `Você correu ${data.dist}km.`);
+        awardFP(FOCO_POINTS.COMPLETE_RUN, "Corrida com Mapa");
+        setIsTrackingMode(false);
+    };
+
     const handleDeleteRun = (id: string) => {
         if (confirm("Deletar esta corrida?")) {
             deleteRunSession(id);
@@ -108,8 +127,17 @@ export default function RunningPage() {
         }
     };
 
+    if (isTrackingMode) {
+        return (
+            <div className="h-[calc(100vh-64px)] p-4 md:p-8">
+                <RunTracker
+                    onBack={() => setIsTrackingMode(false)}
+                    onSave={handleSaveTracker}
+                />
+            </div>
+        );
+    }
 
-    // ... existing imports ...
     return (
         <div className="pb-20">
             <HealthBanner
@@ -135,8 +163,9 @@ export default function RunningPage() {
                     dots={calendarDots}
                 />
 
-                {/* Main Stats (Weekly Context) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Main Stats & Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Weekly Stats */}
                     <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col justify-between">
                         <div>
                             <p className="text-sm text-muted">Distância Semanal</p>
@@ -150,13 +179,24 @@ export default function RunningPage() {
                         </div>
                     </Card>
 
-                    <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col justify-center items-center text-center cursor-pointer hover:bg-orange-500/10 hover:border-orange-500/20 transition-all group"
+                    {/* Manual Entry */}
+                    <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col justify-center items-center text-center cursor-pointer hover:bg-white/5 transition-all group"
                         onClick={handleAddRun}
                     >
-                        <div className="h-12 w-12 rounded-full bg-orange-500 flex items-center justify-center text-black mb-2 group-hover:scale-110 transition-transform">
-                            <Play size={24} fill="currentColor" />
+                        <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 mb-2 group-hover:scale-110 transition-transform">
+                            <PenSquare size={24} />
                         </div>
-                        <span className="font-bold text-white">Registrar Corrida</span>
+                        <span className="font-bold text-white">Registro Manual</span>
+                    </Card>
+
+                    {/* Map Mode */}
+                    <Card className="p-6 bg-gradient-to-br from-orange-600/20 to-orange-900/10 border-orange-500/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-orange-500/50 transition-all group"
+                        onClick={() => setIsTrackingMode(true)}
+                    >
+                        <div className="h-12 w-12 rounded-full bg-orange-500 flex items-center justify-center text-black mb-2 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(249,115,22,0.4)]">
+                            <MapIcon size={24} />
+                        </div>
+                        <span className="font-bold text-white">Iniciar com Mapa</span>
                     </Card>
                 </div>
 
