@@ -125,8 +125,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                 cacheBust: true,
                 backgroundColor: '#09090b',
                 pixelRatio: 2,
-                skipAutoScale: true,
-                useCORS: true
+                skipAutoScale: true
             });
 
             // Check if Web Share API is supported (Mobile)
