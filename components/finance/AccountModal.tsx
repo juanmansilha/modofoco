@@ -106,6 +106,8 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                         { name: "Banco do Brasil", color: "#fbfd00", logo: "/banks/bb.png" },
                                         { name: "Santander", color: "#ec0000", logo: "/banks/santander.jpg" },
                                         { name: "Itaú", color: "#ec7000", logo: "/banks/itau.png" },
+                                        { name: "Bradesco", color: "#cc092f", logo: "/banks/bradesco.jpg" },
+                                        { name: "Inter", color: "#ff7a00", logo: "/banks/inter.png" },
                                         { name: "Caixa", color: "#1f8ef0", logo: "/banks/caixa.png" },
                                     ].map((bank) => (
                                         <button
