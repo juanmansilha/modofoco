@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -19,10 +20,17 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
+
     if (!isOpen) return null;
 
+    // Format phone logic...
     const formatPhone = (val: string) => {
-        // Simple BR mask
         return val
             .replace(/\D/g, "")
             .replace(/^(\d{2})(\d)/g, "($1) $2")
@@ -35,9 +43,7 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
 
     const handleConnect = async () => {
         setIsLoading(true);
-
         try {
-            // First send a test "Welcome" message to verify connection
             const response = await fetch('/api/falcon/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -48,14 +54,12 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
             });
 
             if (!response.ok) {
-                // Determine if it's a 401/403 (Auth) or 404 (Instance not found)
                 const err = await response.json();
                 alert(`Erro de conexão: ${err.error || "Verifique o servidor Evo"}`);
                 setIsLoading(false);
                 return;
             }
 
-            // Save to Global Data only if success
             updateUserData({
                 whatsapp: phone.replace(/\D/g, ""),
                 falconEnabled: true
@@ -94,14 +98,16 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    if (!mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative shadow-2xl animate-in fade-in zoom-in-95 duration-300">
 
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+                    className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors z-10"
                 >
                     <X size={20} />
                 </button>
@@ -197,6 +203,7 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
