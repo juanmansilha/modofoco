@@ -67,8 +67,8 @@ export function RunPathVisualizer({
         const offsetY = (100 - drawnHeight) / 2;
 
         let d = "";
-        let start = null;
-        let end = null;
+        let start: { x: number; y: number } | null = null;
+        let end: { x: number; y: number } | null = null;
 
         points.forEach((p, i) => {
             const { x, y } = project(p.lat, p.lng);
