@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 import { AppShell } from "@/components/layout/AppShell";
 import { IntroAnimation } from "@/components/layout/IntroAnimation";
 import { GlobalDataProvider } from "@/contexts/GlobalDataProvider";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "@/lib/clearMockData"; // Clear old mock data on app load
 
 export default function RootLayout({
@@ -34,6 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground overflow-x-hidden`}
       >
         <IntroAnimation>
+          <ServiceWorkerRegister />
           <GlobalDataProvider>
             <AppShell>
               {children}
