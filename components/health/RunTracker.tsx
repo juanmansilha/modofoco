@@ -127,29 +127,17 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                 pixelRatio: 2, // 2x verified to work fine on simple DOM elements
             });
 
-            // Check if Web Share API is supported (Mobile)
-            if (navigator.share) {
-                const blob = await (await fetch(dataUrl)).blob();
-                const file = new File([blob], "modofoco-story.png", { type: "image/png" });
+            // Directly trigger download for robust "Save" behavior
+            // navigator.share is flaky for strict "saving" on some devices
+            const link = document.createElement('a');
+            link.download = `modofoco-run-${new Date().toISOString()}.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link); // Append to body for Firefox/Mobile compat
+            link.click();
+            document.body.removeChild(link);
 
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Minha Corrida no ModoFoco',
-                    });
-                    addNotification("Sucesso", "Compartilhado!");
-                } catch (shareError) {
-                    // User cancelled or share failed, try download fallback
-                    if ((shareError as Error).name !== 'AbortError') throw shareError;
-                }
-            } else {
-                // Fallback to download
-                const link = document.createElement('a');
-                link.download = `modofoco-run-${new Date().toISOString()}.png`;
-                link.href = dataUrl;
-                link.click();
-                addNotification("Sucesso", "Imagem salva!");
-            }
+            addNotification("Sucesso", "Imagem salva na galeria/downloads!");
+
             setIsShareModalOpen(false);
         } catch (e) {
             console.error(e);
@@ -301,22 +289,14 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-zinc-950 to-orange-900/20 pointer-events-none" />
 
                             {/* Map Top (60%) */}
-                            <div className="h-[60%] relative bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
-                                {(points.length > 0 || actualPath.length > 0) ? (
-                                    /* eslint-disable-next-line @next/next/no-img-element */
-                                    <img
-                                        src={getStaticMapUrl(actualPath.length > 0 ? actualPath : points, 640, 640)} // 2x resolution for retina
-                                        alt="Running Path"
-                                        className="w-full h-full object-cover"
-                                        crossOrigin="anonymous" // Important for canvas capture
-                                    />
-                                ) : (
-                                    <div className="text-zinc-500 text-xs text-center p-4">
-                                        Sem dados de mapa<br />
-                                        <span className="text-[10px] opacity-70">(Adicione pontos ou inicie a corrida)</span>
-                                    </div>
-                                )}
-
+                            <div className="h-[60%] relative bg-[#1a1a1a]">
+                                <RunMap
+                                    points={points}
+                                    actualPath={actualPath}
+                                    onAddPoint={() => { }}
+                                    readOnly={true}
+                                    userLocation={actualPath.length > 0 ? actualPath[actualPath.length - 1] : undefined}
+                                />
                                 {/* Map Overlay Gradient */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent pointer-events-none z-[400]" />
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-[400]" />
@@ -376,18 +356,18 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                         </div>
 
                         <Button
-                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-6 text-lg font-bold shadow-xl shadow-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-zinc-100 hover:bg-white text-zinc-950 py-6 text-lg font-bold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={handleShareFromModal}
                             disabled={isSharing}
                         >
                             {isSharing ? (
                                 <span className="flex items-center animate-pulse">
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                                    Gerando Story...
+                                    <div className="w-4 h-4 border-2 border-zinc-950/30 border-t-zinc-950 rounded-full animate-spin mr-2" />
+                                    Salvando...
                                 </span>
                             ) : (
                                 <span className="flex items-center">
-                                    <Share2 className="mr-2" /> Compartilhar no Instagram
+                                    <Share2 className="mr-2" /> Salvar Imagem
                                 </span>
                             )}
                         </Button>
