@@ -243,24 +243,7 @@ export default function FinancePage() {
     const handleSaveTransaction = async (transactionData: any) => {
         if (!userId) return;
         try {
-            if (transactionData.targetAccountId && transactionData.type === 'expense') {
-                // Invoice Payment / Transfer Logic
-                await SupabaseFinance.createTransferTransaction(
-                    userId,
-                    transactionData.accountId,
-                    transactionData.targetAccountId,
-                    transactionData.amount,
-                    transactionData.date,
-                    transactionData.description,
-                    transactionData.confirmed,
-                    "Pagamento de Fatura"
-                );
-                // We don't have a single "created" object to add to state easily because we created two.
-                // It's safer to just refresh the list.
-                const updatedTransactions = await SupabaseFinance.getFinanceTransactions(userId);
-                setTransactions(updatedTransactions);
-                awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Pagamento de Fatura Agendado");
-            } else if (editingTransaction) {
+            if (editingTransaction) {
                 const updated = await SupabaseFinance.updateFinanceTransaction(editingTransaction.id, {
                     ...transactionData,
                     user_id: userId
@@ -424,23 +407,21 @@ export default function FinancePage() {
                     </div>
                 </div>
 
-                {/* Charts Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Charts Area */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Cash Flow Chart */}
-                        <section className="col-span-1 lg:col-span-2 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
-                            <h3 className="text-lg font-bold text-white mb-6">Fluxo de Caixa</h3>
-                            <FinanceChart data={chartData} />
-                        </section>
+                {/* Charts Area - STACKED */}
+                <div className="flex flex-col gap-6">
+                    {/* Cash Flow Chart */}
+                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                        <h3 className="text-lg font-bold text-white mb-6">Fluxo de Caixa</h3>
+                        <FinanceChart data={chartData} />
+                    </section>
 
-                        {/* Expenses Chart */}
-                        <section className="col-span-1 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
-                            <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
+                    {/* Expenses Chart */}
+                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                        <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
+                        <div className="h-[350px]">
                             <ExpensePieChart data={expenseCategoryData} />
-                        </section>
-                    </div>
-
+                        </div>
+                    </section>
                 </div>
 
                 {/* Main Grid: Accounts & Transactions */}
