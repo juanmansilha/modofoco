@@ -43,6 +43,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
     }, []);
 
+    // Request permission logic (Restored)
+    useEffect(() => {
+        const handleInteraction = () => {
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        };
+
+        // Try immediately (Desktop)
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission().catch(() => { });
+        }
+
+        // Add listener for mobile support
+        document.addEventListener('click', handleInteraction, { once: true });
+        document.addEventListener('touchstart', handleInteraction, { once: true });
+
+        // Test Notification on mount (if allowed)
+        if ("Notification" in window && Notification.permission === "granted") {
+            // navigator.serviceWorker.ready.then(reg => reg.showNotification("ModoFoco", { body: "Sistema de alerta ativo!" }));
+        }
+
+        return () => {
+            document.removeEventListener('click', handleInteraction);
+            document.removeEventListener('touchstart', handleInteraction);
+        };
+    }, []);
 
 
     // Save to localStorage whenever notifications change
@@ -64,6 +91,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         // Show toast
         setToasts(prev => [...prev, { id, title, message, onClose: removeToast }]);
+
+        // Native Notification (Mobile/Background Support)
+        if ("Notification" in window && Notification.permission === "granted") {
+            if (navigator.serviceWorker) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(title, {
+                        body: message,
+                        icon: '/icons/icon-192x192.png',
+                        badge: '/icons/icon-192x192.png',
+                        tag: 'modofoco-notification'
+                    });
+                });
+            } else {
+                new Notification(title, { body: message, icon: '/icons/icon-192x192.png' });
+            }
+        }
 
 
     };
