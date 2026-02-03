@@ -48,14 +48,6 @@ export default function DashboardPage() {
         generalRoutines,
         userData // Get userData
     } = useGlobalData();
-    const { level, progress } = useGamification();
-
-    // Imports at top
-    import { FinanceChart } from "@/components/finance/FinanceChart";
-    import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
-    import { format, subDays, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from "date-fns";
-
-    // ... existing code ...
 
     // Financial Data State
     const [financialData, setFinancialData] = useState({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0 });
