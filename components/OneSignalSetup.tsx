@@ -9,7 +9,8 @@ export default function OneSignalSetup() {
             try {
                 await OneSignal.init({
                     appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || "b07caf1d-c550-4072-8f07-7cd960fa45c1",
-                    // allowLocalhostAsSecureOrigin: true, // Only for dev, comment out for prod if needed but useful for testing
+                    allowLocalhostAsSecureOrigin: true, // Needed for simple dev environments if not https
+                    autoRegister: true,
                     notifyButton: {
                         enable: true,
                         size: 'medium',
