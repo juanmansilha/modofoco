@@ -35,6 +35,9 @@ import {
     ResponsiveContainer,
     Cell
 } from "recharts";
+import { FinanceChart } from "@/components/finance/FinanceChart";
+import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
+import { startOfMonth, endOfMonth, isSameDay } from "date-fns";
 
 export default function DashboardPage() {
     const {
