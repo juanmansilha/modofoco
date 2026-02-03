@@ -289,14 +289,22 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-zinc-950 to-orange-900/20 pointer-events-none" />
 
                             {/* Map Top (60%) */}
-                            <div className="h-[60%] relative bg-[#1a1a1a]">
-                                <RunMap
-                                    points={points}
-                                    actualPath={actualPath}
-                                    onAddPoint={() => { }}
-                                    readOnly={true}
-                                    userLocation={actualPath.length > 0 ? actualPath[actualPath.length - 1] : undefined}
-                                />
+                            <div className="h-[60%] relative bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
+                                {(points.length > 0 || actualPath.length > 0) ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img
+                                        src={getStaticMapUrl(actualPath.length > 0 ? actualPath : points, 640, 640)} // 2x resolution for retina
+                                        alt="Running Path"
+                                        className="w-full h-full object-cover"
+                                        crossOrigin="anonymous" // Important for canvas capture
+                                    />
+                                ) : (
+                                    <div className="text-zinc-500 text-xs text-center p-4">
+                                        Sem dados de mapa<br />
+                                        <span className="text-[10px] opacity-70">(Adicione pontos ou inicie a corrida)</span>
+                                    </div>
+                                )}
+
                                 {/* Map Overlay Gradient */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent pointer-events-none z-[400]" />
                                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-[400]" />
