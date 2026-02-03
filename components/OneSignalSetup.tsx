@@ -27,7 +27,9 @@ export default function OneSignalSetup() {
                             'dialog.main.button.subscribe': 'Inscrever-se',
                             'dialog.main.button.unsubscribe': 'Cancelar inscrição',
                             'dialog.blocked.title': 'Desbloquear Notificações',
-                            'dialog.blocked.message': 'Siga as instruções para permitir notificações:'
+                            'dialog.blocked.message': 'Siga as instruções para permitir notificações:',
+                            'message.action.subscribing': 'Inscrevendo-se...',
+                            'message.prenotify': 'Clique para se inscrever nas notificações'
                         },
                         prenotify: true,
                     },
