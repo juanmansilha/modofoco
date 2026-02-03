@@ -34,10 +34,10 @@ export function AccountCard({ id, name, balance, type, color, onEdit, onDelete, 
             />
 
             <div className="relative z-10 flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-xl border border-white/5 ${props.logo_url ? 'bg-white p-1' : 'bg-zinc-900'}`}>
+                <div className={`rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center shrink-0 w-12 h-12 ${props.logo_url ? 'bg-transparent' : 'bg-zinc-900 p-3'}`}>
                     {props.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={props.logo_url} alt={name} className="w-6 h-6 object-contain" />
+                        <img src={props.logo_url} alt={name} className="w-full h-full object-cover" />
                     ) : (
                         <Icon size={24} style={{ color }} />
                     )}
