@@ -487,5 +487,6 @@ export default function DashboardPage() {
                     </section>
                 </div>
             </div>
-            );
+        </div>
+    );
 }
