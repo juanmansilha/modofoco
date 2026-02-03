@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Play, Pause, Square, Share2, MapPin, Trash2, ArrowLeft } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { useNotifications } from "@/contexts/NotificationContext";
+import html2canvas from "html2canvas";
 
 // Dynamic import for Leaflet map to avoid SSR issues
 const RunMap = dynamic(() => import("./RunMap"), { ssr: false });
@@ -117,10 +117,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                 img.crossOrigin = "anonymous";
             });
 
-            import html2canvas from "html2canvas";
-            // ... (imports)
 
-            // ... (inside component)
 
             // Wait a bit for any re-fetches or re-renders
             await new Promise(resolve => setTimeout(resolve, 2500));
