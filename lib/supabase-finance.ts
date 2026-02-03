@@ -259,9 +259,132 @@ export async function confirmTransaction(id: string): Promise<FinanceTransaction
     return data;
 }
 
-// ... categories ...
+// ============ CATEGORIES ============
 
-// ... sync ...
+export async function getFinanceCategories(userId: string): Promise<FinanceCategory[]> {
+    const { data, error } = await supabase
+        .from('finance_categories')
+        .select('*')
+        .eq('user_id', userId)
+        .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function createFinanceCategory(category: Omit<FinanceCategory, 'id' | 'created_at' | 'updated_at'>): Promise<FinanceCategory> {
+    const { data, error } = await supabase
+        .from('finance_categories')
+        .insert([category])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function updateFinanceCategory(id: string, updates: Partial<FinanceCategory>): Promise<FinanceCategory> {
+    const { data, error } = await supabase
+        .from('finance_categories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteFinanceCategory(id: string): Promise<void> {
+    const { error } = await supabase
+        .from('finance_categories')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+export async function syncFinanceCategories(userId: string, categories: any[]): Promise<void> {
+    // Delete existing
+    await supabase.from('finance_categories').delete().eq('user_id', userId);
+
+    // Insert new
+    if (categories.length > 0) {
+        const toInsert = categories.map(cat => ({
+            user_id: userId,
+            name: cat.name,
+            type: cat.type,
+            color: cat.color,
+            icon: cat.icon
+        }));
+        const { error } = await supabase.from('finance_categories').insert(toInsert);
+        if (error) throw error;
+    }
+}
+
+// ============ BULK OPERATIONS ============
+
+export async function syncLocalToSupabase(
+    userId: string,
+    accounts: any[],
+    transactions: any[],
+    categories: any[]
+): Promise<void> {
+    // Delete all existing data
+    await supabase.from('finance_transactions').delete().eq('user_id', userId);
+    await supabase.from('finance_accounts').delete().eq('user_id', userId);
+    await supabase.from('finance_categories').delete().eq('user_id', userId);
+
+    // Insert categories first
+    if (categories.length > 0) {
+        const categoriesToInsert = categories.map(cat => ({
+            user_id: userId,
+            name: cat.name,
+            type: cat.type,
+            color: cat.color,
+            icon: cat.icon
+        }));
+        await supabase.from('finance_categories').insert(categoriesToInsert);
+    }
+
+    // Insert accounts
+    if (accounts.length > 0) {
+        const accountsToInsert = accounts.map(acc => ({
+            user_id: userId,
+            name: acc.name,
+            balance: acc.balance,
+            type: acc.type,
+            color: acc.color
+        }));
+        const { data: insertedAccounts } = await supabase
+            .from('finance_accounts')
+            .insert(accountsToInsert)
+            .select();
+
+        // Map old IDs to new IDs
+        const accountIdMap: Record<string, string> = {};
+        accounts.forEach((oldAcc, index) => {
+            if (insertedAccounts && insertedAccounts[index]) {
+                accountIdMap[oldAcc.id] = insertedAccounts[index].id;
+            }
+        });
+
+        // Insert transactions with mapped account IDs
+        if (transactions.length > 0) {
+            const transactionsToInsert = transactions.map(trans => ({
+                user_id: userId,
+                account_id: accountIdMap[trans.accountId] || trans.accountId,
+                description: trans.description,
+                amount: trans.amount,
+                type: trans.type,
+                category: trans.category,
+                date: trans.date
+                // confirmed: trans.confirmed !== false // REMOVED confirmed
+            }));
+            await supabase.from('finance_transactions').insert(transactionsToInsert);
+        }
+    }
+}
 
 // ============ TRANSFERS & INVOICE PAYMENTS ============
 
