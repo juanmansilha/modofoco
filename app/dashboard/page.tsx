@@ -47,52 +47,121 @@ export default function DashboardPage() {
     } = useGlobalData();
     const { level, progress } = useGamification();
 
-    // Financial Data
-    const [financialData, setFinancialData] = useState({ balance: 0, expenses: 0, income: 0 });
+    // Imports at top
+    import { FinanceChart } from "@/components/finance/FinanceChart";
+    import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
+    import { format, subDays, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+
+    // ... existing code ...
+
+    // Financial Data State
+    const [financialData, setFinancialData] = useState({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0 });
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [expenseCategoryData, setExpenseCategoryData] = useState<any[]>([]);
+    const [accounts, setAccounts] = useState<any[]>([]); // New state
     const [userId, setUserId] = useState<string | null>(null);
 
-    // Get user ID from Supabase auth
-    useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setUserId(user.id);
-            }
-        };
-        getUser();
-    }, []);
+    // ... (userId effect)
 
     useEffect(() => {
         if (!userId) return;
 
         const loadFinanceData = async () => {
             try {
-                const [accounts, transactions] = await Promise.all([
+                const [accountsData, transactions, categories] = await Promise.all([
                     SupabaseFinance.getFinanceAccounts(userId),
-                    SupabaseFinance.getFinanceTransactions(userId)
+                    SupabaseFinance.getFinanceTransactions(userId),
+                    SupabaseFinance.getFinanceCategories(userId)
                 ]);
 
-                const totalBalance = accounts.reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
+                setAccounts(accountsData);
 
+                const totalBalance = accountsData.reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
                 const currentMonth = new Date();
+
+                // Transactions for Stats (Current Month)
                 const monthTransactions = transactions.filter((t: any) => {
                     const tDate = new Date(t.date);
                     return tDate.getMonth() === currentMonth.getMonth() &&
-                        tDate.getFullYear() === currentMonth.getFullYear() &&
-                        t.confirmed !== false; // Only confirmed for main stats
+                        tDate.getFullYear() === currentMonth.getFullYear();
                 });
 
-                const expenses = monthTransactions
-                    .filter((t: any) => t.type === 'expense')
-                    .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+                // Calculate Stats
+                let confirmedIncome = 0;
+                let pendingIncome = 0;
+                let confirmedExpenses = 0;
+                let pendingExpenses = 0;
 
-                const income = monthTransactions
-                    .filter((t: any) => t.type === 'income')
-                    .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+                monthTransactions.forEach((t: any) => {
+                    if (t.type === 'income') {
+                        if (t.confirmed !== false) confirmedIncome += t.amount;
+                        else pendingIncome += t.amount;
+                    } else {
+                        if (t.confirmed !== false) confirmedExpenses += t.amount;
+                        else pendingExpenses += t.amount;
+                    }
+                });
 
-                setFinancialData({ balance: totalBalance, expenses, income });
+                setFinancialData({
+                    balance: totalBalance,
+                    expenses: confirmedExpenses,
+                    income: confirmedIncome,
+                    pendingIncome,
+                    pendingExpenses
+                });
+
+                // Chart Data (Daily)
+                const start = startOfMonth(currentMonth);
+                const end = endOfMonth(currentMonth);
+                const days = eachDayOfInterval({ start, end });
+
+                const cData = days.map(day => {
+                    const dayTransactions = monthTransactions.filter((t: any) => isSameDay(new Date(t.date), day));
+                    const inc = dayTransactions.filter((t: any) => t.type === "income").reduce((sum: number, t: any) => sum + t.amount, 0);
+                    const exp = dayTransactions.filter((t: any) => t.type === "expense").reduce((sum: number, t: any) => sum + t.amount, 0);
+                    return { day: format(day, "dd"), income: inc, expense: exp };
+                });
+                setChartData(cData);
+
+                // Pie Chart Data
+                const expMap = new Map();
+                monthTransactions.filter((t: any) => t.type === 'expense').forEach((t: any) => {
+                    const curr = expMap.get(t.category) || 0;
+                    expMap.set(t.category, curr + t.amount);
+                });
+
+                const pData: any[] = [];
+                expMap.forEach((amount, categoryName) => {
+                    const categoryDef = categories.find((c: any) => c.name === categoryName);
+                    // Match logic from FinancePage
+                    let color = "#71717a";
+                    if (categoryDef) {
+                        const colorMap: Record<string, string> = {
+                            "bg-emerald-500": "#10b981",
+                            "bg-green-500": "#22c55e",
+                            "bg-orange-500": "#f97316",
+                            "bg-blue-500": "#3b82f6",
+                            "bg-purple-500": "#a855f7",
+                            "bg-pink-500": "#ec4899",
+                            "bg-red-500": "#ef4444",
+                            "bg-indigo-500": "#6366f1",
+                            "bg-yellow-500": "#eab308",
+                            "bg-cyan-500": "#06b6d4",
+                            "bg-teal-500": "#14b8a6",
+                            "bg-lime-500": "#84cc16",
+                            "bg-fuchsia-500": "#d946ef",
+                            "bg-rose-500": "#f43f5e",
+                            "bg-slate-500": "#64748b",
+                            "bg-zinc-500": "#71717a",
+                        };
+                        color = colorMap[categoryDef.color] || categoryDef.color;
+                    }
+                    pData.push({ name: categoryName, value: amount, color });
+                });
+                setExpenseCategoryData(pData.sort((a, b) => b.value - a.value));
+
             } catch (e) {
-                console.error('Error loading financial data from Supabase:', e);
+                console.error('Error loading financial data:', e);
             }
         };
 
@@ -209,29 +278,60 @@ export default function DashboardPage() {
                     </div>
                 </Card>
 
-                {/* Em Caixa (Balance) */}
-                <Card className="hover:border-emerald-500/20 transition-all cursor-pointer group bg-zinc-900/30">
-                    <div className="flex items-center justify-between mb-4">
-                        <p className="text-sm text-muted group-hover:text-emerald-400 transition-colors">Em Caixa</p>
-                        <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                            <Wallet size={16} />
+                {/* Financial Summary Block (Replaces single card) */}
+                <div className="col-span-1 md:col-span-2 space-y-4">
+                    {/* Total Balance Card */}
+                    <Card className="hover:border-emerald-500/20 transition-all cursor-pointer group bg-zinc-900/30 p-6">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Wallet size={20} className="text-emerald-500" />
+                                Resumo Financeiro
+                            </h3>
+                            <span className="text-xs text-zinc-500">Mês Atual</span>
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <p className="text-sm text-zinc-400">Saldo Total</p>
+                                <p className="text-2xl font-bold text-white tracking-tight">
+                                    {financialData.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-zinc-400">Receitas</span>
+                                    <span className="text-emerald-400">{financialData.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-zinc-400">Despesas</span>
+                                    <span className="text-red-400">{financialData.expenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                </div>
+                                {(financialData.pendingIncome > 0 || financialData.pendingExpenses > 0) && (
+                                    <div className="pt-2 mt-2 border-t border-white/5">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-amber-500/80">Pendente</span>
+                                            <span className="text-amber-500">
+                                                {(financialData.pendingIncome - financialData.pendingExpenses).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Quick Accounts List */}
+                    <div className="grid grid-cols-2 gap-2">
+                        {accounts.slice(0, 4).map(acc => (
+                            <div key={acc.id} className="bg-zinc-900/40 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
+                                <span className="text-[10px] text-zinc-400 uppercase tracking-wider truncate">{acc.name}</span>
+                                <span className="text-sm font-bold text-white">
+                                    {acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                    <p className="text-2xl font-bold text-white tracking-tight">
-                        R$ {financialData.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    {financialData.income > financialData.expenses ? (
-                        <div className="flex items-center text-emerald-500 text-xs mt-2 font-medium bg-emerald-500/5 py-1 px-2 rounded w-fit">
-                            <ArrowUpRight size={12} className="mr-1" />
-                            <span>Receitas em alta</span>
-                        </div>
-                    ) : financialData.expenses > 0 ? (
-                        <div className="flex items-center text-red-500 text-xs mt-2 font-medium bg-red-500/5 py-1 px-2 rounded w-fit">
-                            <ArrowDownRight size={12} className="mr-1" />
-                            <span>Atenção aos gastos</span>
-                        </div>
-                    ) : null}
-                </Card>
+                </div>
 
                 {/* Habits Score */}
                 <Card className="hover:border-blue-500/20 transition-all cursor-pointer group bg-zinc-900/30">
@@ -373,7 +473,24 @@ export default function DashboardPage() {
 
                 </div>
 
+
+                {/* Financial Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <section className="col-span-1 lg:col-span-2 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                        <h3 className="font-bold text-white flex items-center gap-2 mb-4">
+                            <Activity size={18} className="text-indigo-500" />
+                            Fluxo Financeiro (Mensal)
+                        </h3>
+                        <FinanceChart data={chartData} />
+                    </section>
+                    <section className="col-span-1 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                        <h3 className="font-bold text-white flex items-center gap-2 mb-4">
+                            <ShoppingBag size={18} className="text-rose-500" />
+                            Despesas (Top Categorias)
+                        </h3>
+                        <ExpensePieChart data={expenseCategoryData} />
+                    </section>
+                </div>
             </div>
-        </div>
-    );
+            );
 }

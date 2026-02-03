@@ -424,11 +424,6 @@ export default function FinancePage() {
                         </section>
                     </div>
 
-                    {/* Expenses Chart */}
-                    <section className="col-span-1 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
-                        <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
-                        <ExpensePieChart data={expenseCategoryData} />
-                    </section>
                 </div>
 
                 {/* Main Grid: Accounts & Transactions */}
