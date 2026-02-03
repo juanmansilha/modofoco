@@ -9,8 +9,10 @@ interface GoalCardProps {
     id: string;
     title: string;
     description: string;
-    targetDate: Date;
-    imageUrl: string;
+    targetDate?: Date;
+    target_date?: string; // Fallback for DB raw data
+    imageUrl?: string;
+    image_url?: string; // Fallback for DB raw data
     progress: number; // 0 to 100
     status: string; // 'not_started', 'in_progress', 'completed'
     onEdit: (id: string) => void;
@@ -34,13 +36,16 @@ const getStatusLabel = (status: string) => {
     }
 };
 
-export function GoalCard({ id, title, description, targetDate, imageUrl, progress, status, onEdit, onDelete, onView }: GoalCardProps) {
+export function GoalCard({ id, title, description, targetDate, target_date, imageUrl, image_url, progress, status, onEdit, onDelete, onView }: GoalCardProps) {
+    const finalImageUrl = imageUrl || image_url;
+    const finalTargetDate = targetDate || target_date;
+
     return (
         <div className="group relative h-[320px] rounded-3xl overflow-hidden border border-white/5 bg-zinc-900 shadow-xl transition-all hover:scale-[1.02] hover:shadow-2xl hover:border-white/20">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
-                    src={imageUrl || "/placeholder-goal.jpg"} // Use local placeholder or empty if preferred
+                    src={finalImageUrl || "/placeholder-goal.jpg"} // Use local placeholder or empty if preferred
                     alt={title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -102,7 +107,8 @@ export function GoalCard({ id, title, description, targetDate, imageUrl, progres
                         <span>
                             {(() => {
                                 try {
-                                    const date = new Date(targetDate);
+                                    if (!finalTargetDate) return "Sem data";
+                                    const date = new Date(finalTargetDate);
                                     if (isNaN(date.getTime())) return "Sem data";
                                     return format(date, "dd MMM yyyy", { locale: ptBR });
                                 } catch (e) {
