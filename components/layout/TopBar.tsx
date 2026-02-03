@@ -57,6 +57,8 @@ export function TopBar() {
 
                 <div className="h-8 w-px bg-white/10" />
 
+                <FalconIcon />
+
                 {/* Notification Bell */}
                 <div className="relative">
                     <button
