@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Play, Pause, Square, Share2, MapPin, Trash2, ArrowLeft } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { toPng } from "html-to-image";
-import { getStaticMapUrl } from "@/lib/google-maps";
+import { RunPathVisualizer } from "./RunPathVisualizer";
 
 // Dynamic import for Leaflet map to avoid SSR issues
 const RunMap = dynamic(() => import("./RunMap"), { ssr: false });
@@ -289,25 +289,22 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-zinc-950 to-orange-900/20 pointer-events-none" />
 
                             {/* Map Top (60%) */}
-                            <div className="h-[60%] relative bg-[#1a1a1a] flex items-center justify-center overflow-hidden">
+                            <div className="h-[60%] relative bg-[#09090b] flex items-center justify-center p-8">
                                 {(points.length > 0 || actualPath.length > 0) ? (
-                                    /* eslint-disable-next-line @next/next/no-img-element */
-                                    <img
-                                        src={getStaticMapUrl(actualPath.length > 0 ? actualPath : points, 640, 640)} // 2x resolution for retina
-                                        alt="Running Path"
-                                        className="w-full h-full object-cover"
-                                        crossOrigin="anonymous" // Important for canvas capture
+                                    <RunPathVisualizer
+                                        points={actualPath.length > 0 ? actualPath : points}
+                                        className="w-full h-full drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]"
+                                        strokeColor="#f97316"
+                                        strokeWidth={4}
                                     />
                                 ) : (
                                     <div className="text-zinc-500 text-xs text-center p-4">
-                                        Sem dados de mapa<br />
-                                        <span className="text-[10px] opacity-70">(Adicione pontos ou inicie a corrida)</span>
+
+                                        <span className="text-[10px] opacity-70">Sem traçado registrado</span>
                                     </div>
                                 )}
 
-                                {/* Map Overlay Gradient */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent pointer-events-none z-[400]" />
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-[400]" />
+                                {/* Subtle Texture/Grain (Optional, keeping it clean for now) */}
                             </div>
 
                             {/* Branding & Stats Bottom (40%) */}
