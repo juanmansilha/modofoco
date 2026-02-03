@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Play, Pause, Square, Share2, MapPin, Trash2, ArrowLeft } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { toPng } from "html-to-image";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 // Dynamic import for Leaflet map to avoid SSR issues
 const RunMap = dynamic(() => import("./RunMap"), { ssr: false });
@@ -117,15 +117,22 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                 img.crossOrigin = "anonymous";
             });
 
+            import html2canvas from "html2canvas";
+            // ... (imports)
+
+            // ... (inside component)
+
             // Wait a bit for any re-fetches or re-renders
             await new Promise(resolve => setTimeout(resolve, 2500));
 
-            // Generate Image
-            const dataUrl = await toPng(shareRef.current, {
-                cacheBust: true,
+            // Generate Image using html2canvas
+            const canvas = await html2canvas(shareRef.current, {
+                useCORS: true,
+                allowTaint: true,
                 backgroundColor: '#09090b',
-                pixelRatio: 1, // Reduced for mobile stability
+                scale: 2, // Higher quality, usually fine with html2canvas
             });
+            const dataUrl = canvas.toDataURL("image/png");
 
             // Check if Web Share API is supported (Mobile)
             if (navigator.share) {
