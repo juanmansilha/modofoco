@@ -80,7 +80,8 @@ export default function RunMap({ points, actualPath = [], onAddPoint, readOnly =
         <MapContainer
             center={startPoint || defaultCenter}
             zoom={13}
-            style={{ height: "100%", width: "100%", borderRadius: "1rem" }}
+            preferCanvas={true}
+            style={{ height: "100%", width: "100%", borderRadius: "1rem", backgroundColor: "#09090b" }}
             className="z-0"
         >
             <TileLayer
