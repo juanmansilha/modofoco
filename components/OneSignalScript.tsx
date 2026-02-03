@@ -2,14 +2,14 @@
 import Script from 'next/script';
 
 export default function OneSignalScript() {
-    return (
-        <>
-            <Script
-                src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-                strategy="afterInteractive"
-            />
-            <Script id="onesignal-init" strategy="afterInteractive">
-                {`
+  return (
+    <>
+      <Script
+        src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+        strategy="afterInteractive"
+      />
+      <Script id="onesignal-init" strategy="afterInteractive">
+        {`
           window.OneSignalDeferred = window.OneSignalDeferred || [];
           OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
@@ -43,9 +43,22 @@ export default function OneSignalScript() {
             OneSignal.Slidedown.promptPush();
             
             console.log("✅ OneSignal Script Loaded & Init Called");
+            
+            // Debug Subscription
+            setTimeout(() => {
+                if (OneSignal.User && OneSignal.User.PushSubscription) {
+                    console.log("✅ Subscription ID:", OneSignal.User.PushSubscription.id);
+                    console.log("✅ Opted In:", OneSignal.User.PushSubscription.optedIn);
+                    
+                    // Add listener for changes
+                    OneSignal.User.PushSubscription.addEventListener("change", function(event) {
+                        console.log("✅ Subscription Changed:", event);
+                    });
+                }
+            }, 3000); // Wait a bit for async init
           });
         `}
-            </Script>
-        </>
-    );
+      </Script>
+    </>
+  );
 }
