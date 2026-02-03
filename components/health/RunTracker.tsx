@@ -327,7 +327,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                                 </div>
 
                                 {/* Footer */}
-                                <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
+                                <div className="mt-auto flex items-center justify-between pt-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20">
                                             <MapPin size={16} className="text-white" />
