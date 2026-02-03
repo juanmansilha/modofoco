@@ -38,6 +38,9 @@ import {
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
 import { startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { CashBalanceCard } from "@/components/dashboard/CashBalanceCard";
+import { HabitsCard } from "@/components/dashboard/HabitsCard";
+import { FinancialSummaryCard } from "@/components/dashboard/FinancialSummaryCard";
 
 export default function DashboardPage() {
     const {
@@ -232,18 +235,17 @@ export default function DashboardPage() {
                         Você tem <span className="text-white font-bold">{tasks.filter(t => t.status !== "done").length} tarefas</span> pendentes para hoje.
                     </p>
                 </div>
-
             </div>
 
-            {/* Top Grid Stats */}
+            {/* TOP ROW: Focus (50%), Cash (25%), Habits (25%) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                {/* Main Focus / Priority */}
+                {/* Main Focus (Span 2) */}
                 <Card className="col-span-1 md:col-span-2 bg-linear-to-br from-indigo-950/40 to-black border-indigo-500/20 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
                         <Target size={20} className="text-indigo-400" />
                     </div>
-                    <div className="flex flex-col h-full justify-between p-1">
+                    <div className="flex flex-col h-full justify-between p-4">
                         <div>
                             <p className="text-xs uppercase tracking-widest text-indigo-400/80 mb-2 font-bold flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
@@ -275,87 +277,17 @@ export default function DashboardPage() {
                     </div>
                 </Card>
 
-                {/* Financial Summary Block (Replaces single card) */}
-                <div className="col-span-1 md:col-span-2 space-y-4">
-                    {/* Total Balance Card */}
-                    <Card className="hover:border-emerald-500/20 transition-all cursor-pointer group bg-zinc-900/30 p-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Wallet size={20} className="text-emerald-500" />
-                                Resumo Financeiro
-                            </h3>
-                            <span className="text-xs text-zinc-500">Mês Atual</span>
-                        </div>
+                {/* Cash Balance */}
+                <CashBalanceCard balance={financialData.balance} />
 
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <p className="text-sm text-zinc-400">Saldo Total</p>
-                                <p className="text-2xl font-bold text-white tracking-tight">
-                                    {financialData.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-zinc-400">Receitas</span>
-                                    <span className="text-emerald-400">{financialData.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-zinc-400">Despesas</span>
-                                    <span className="text-red-400">{financialData.expenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                                </div>
-                                {(financialData.pendingIncome > 0 || financialData.pendingExpenses > 0) && (
-                                    <div className="pt-2 mt-2 border-t border-white/5">
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-amber-500/80">Pendente</span>
-                                            <span className="text-amber-500">
-                                                {(financialData.pendingIncome - financialData.pendingExpenses).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* Quick Accounts List */}
-                    <div className="grid grid-cols-2 gap-2">
-                        {accounts.slice(0, 4).map(acc => (
-                            <div key={acc.id} className="bg-zinc-900/40 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
-                                <span className="text-[10px] text-zinc-400 uppercase tracking-wider truncate">{acc.name}</span>
-                                <span className="text-sm font-bold text-white">
-                                    {acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Habits Score */}
-                <Card className="hover:border-blue-500/20 transition-all cursor-pointer group bg-zinc-900/30">
-                    <div className="flex items-center justify-between mb-4">
-                        <p className="text-sm text-muted group-hover:text-blue-400 transition-colors">Hábitos Hoje</p>
-                        <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                            <CheckCircle2 size={16} />
-                        </div>
-                    </div>
-                    <div className="flex items-end gap-2">
-                        <p className="text-2xl font-bold text-white tracking-tight">{completedItems}</p>
-                        <span className="text-muted text-sm mb-1">/ {totalItems}</span>
-                    </div>
-                    <div className="w-full bg-zinc-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progressPercentage}%` }}
-                            className="bg-blue-600 h-full rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"
-                        />
-                    </div>
-                </Card>
+                {/* Habits */}
+                <HabitsCard completed={completedItems} total={totalItems} />
             </div>
 
-            {/* Main Content Areas */}
+            {/* MAIN CONTENT GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Left Column: Health & Agenda */}
+                {/* Left Column: Health & Charts (Span 2) */}
                 <div className="lg:col-span-2 space-y-6">
 
                     {/* Health Chart */}
@@ -398,49 +330,28 @@ export default function DashboardPage() {
                         </div>
                     </Card>
 
-                    {/* Timeline / Agenda */}
+                    {/* Finance Flow Chart (Moved here to fill space) */}
                     <Card className="p-6 border-white/5 bg-zinc-900/30">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-bold text-white flex items-center gap-2">
-                                <Calendar size={18} className="text-indigo-500" />
-                                Agenda de Hoje
-                            </h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            {todayItems.length === 0 ? (
-                                <p className="text-center text-zinc-500 py-8 text-sm">Nada agendado para hoje.</p>
-                            ) : (
-                                todayItems.map((item, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 group">
-                                        <div className="w-12 text-center">
-                                            <span className="text-xs font-bold text-zinc-300 block">{item.time}</span>
-                                        </div>
-                                        <div className={`flex-1 p-3 rounded-xl border border-white/5 flex items-center justify-between transition-all ${item.isCompleted
-                                            ? "bg-zinc-900/50 opacity-60"
-                                            : "bg-[#0A0A0A] hover:border-indigo-500/30"
-                                            }`}>
-                                            <div>
-                                                <h4 className={`text-sm font-medium ${item.isCompleted ? "text-zinc-500 line-through" : "text-white"}`}>
-                                                    {item.title}
-                                                </h4>
-                                                {item.subtitle && <p className="text-xs text-zinc-500">{item.subtitle}</p>}
-                                            </div>
-                                            <div className="h-2 w-2 rounded-full bg-indigo-500/50" />
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
+                        <h3 className="font-bold text-white flex items-center gap-2 mb-6">
+                            <Activity size={18} className="text-indigo-500" />
+                            Fluxo Financeiro (Mensal)
+                        </h3>
+                        <FinanceChart data={chartData} />
                     </Card>
 
                 </div>
 
-                {/* Right Column: Finance & Tasks */}
+                {/* Right Column: Finance Summary & Tasks (Span 1) */}
                 <div className="space-y-6">
 
-                    {/* Next Tasks List (Collapsed) */}
-                    <Card className="p-6 border-white/5 bg-zinc-900/30 h-fit">
+                    {/* Financial Summary */}
+                    <FinancialSummaryCard
+                        financialData={financialData}
+                        categoryData={expenseCategoryData}
+                    />
+
+                    {/* Next Tasks */}
+                    <Card className="p-6 border-white/5 bg-zinc-900/30">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-white flex items-center gap-2">
                                 <Target size={18} className="text-amber-500" />
@@ -468,25 +379,6 @@ export default function DashboardPage() {
                         </button>
                     </Card>
 
-                </div>
-
-
-                {/* Financial Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                    <section className="col-span-1 lg:col-span-2 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
-                        <h3 className="font-bold text-white flex items-center gap-2 mb-4">
-                            <Activity size={18} className="text-indigo-500" />
-                            Fluxo Financeiro (Mensal)
-                        </h3>
-                        <FinanceChart data={chartData} />
-                    </section>
-                    <section className="col-span-1 bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
-                        <h3 className="font-bold text-white flex items-center gap-2 mb-4">
-                            <ShoppingBag size={18} className="text-rose-500" />
-                            Despesas (Top Categorias)
-                        </h3>
-                        <ExpensePieChart data={expenseCategoryData} />
-                    </section>
                 </div>
             </div>
         </div>
