@@ -108,6 +108,9 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
     const handleShareFromModal = async () => {
         if (!shareRef.current) return;
         try {
+            // Wait for map tiles to load (fix white map issue)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const dataUrl = await toPng(shareRef.current, { cacheBust: true, backgroundColor: '#09090b', pixelRatio: 2 });
 
             // Check if Web Share API is supported (Mobile)
@@ -258,6 +261,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
             </div>
 
             {/* Social Share Modal */}
+            {/* Social Share Modal */}
             {isShareModalOpen && (
                 <div className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="flex flex-col gap-4 max-h-[90vh]">
@@ -269,10 +273,13 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                         {/* Story Container (Capture Target) */}
                         <div
                             ref={shareRef}
-                            className="w-[320px] aspect-[9/16] bg-zinc-950 rounded-2xl overflow-hidden flex flex-col border border-white/10 relative shadow-2xl"
+                            className="w-[320px] aspect-[9/16] bg-zinc-950 rounded-3xl overflow-hidden flex flex-col relative shadow-2xl border-4 border-zinc-900"
                         >
-                            {/* Map Top (65%) */}
-                            <div className="h-[65%] relative">
+                            {/* Background Gradients */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-zinc-950 to-orange-900/20 pointer-events-none" />
+
+                            {/* Map Top (60%) */}
+                            <div className="h-[60%] relative bg-[#1a1a1a]">
                                 <RunMap
                                     points={points}
                                     actualPath={actualPath}
@@ -280,39 +287,59 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                                     readOnly={true}
                                     userLocation={actualPath.length > 0 ? actualPath[actualPath.length - 1] : undefined}
                                 />
-                                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none z-[400]" />
+                                {/* Map Overlay Gradient */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent pointer-events-none z-[400]" />
+                                <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-[400]" />
                             </div>
 
-                            {/* Branding & Stats Bottom (35%) */}
-                            <div className="flex-1 flex flex-col justify-between p-6 relative z-[500]">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
-                                        <MapPin size={16} className="text-white" />
+                            {/* Branding & Stats Bottom (40%) */}
+                            <div className="flex-1 flex flex-col p-6 z-[500] relative">
+                                {/* Run Header */}
+                                <div className="mb-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 text-[10px] font-bold uppercase tracking-wider border border-orange-500/20">
+                                            {new Date().getHours() < 12 ? 'Morning Run' : new Date().getHours() < 18 ? 'Afternoon Run' : 'Night Run'}
+                                        </span>
+                                        <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">• {new Date().toLocaleDateString('pt-BR')}</span>
                                     </div>
-                                    <div>
-                                        <div className="text-sm font-bold text-white leading-none">ModoFoco</div>
-                                        <div className="text-[10px] text-zinc-400">Run Tracker</div>
+                                    <h2 className="text-2xl font-black text-white italic leading-tight">
+                                        {startQuery ? startQuery.split(',')[0] : "Minha Corrida"}
+                                    </h2>
+                                </div>
+
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white/5 p-3 rounded-2xl backdrop-blur-sm border border-white/5">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                            <span className="text-[10px] text-zinc-400 uppercase font-bold">Distância</span>
+                                        </div>
+                                        <div className="text-2xl font-black text-white">{distance.toFixed(2)}<span className="text-sm font-normal text-zinc-500 ml-1">km</span></div>
+                                    </div>
+
+                                    <div className="bg-white/5 p-3 rounded-2xl backdrop-blur-sm border border-white/5">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                            <span className="text-[10px] text-zinc-400 uppercase font-bold">Tempo</span>
+                                        </div>
+                                        <div className="text-2xl font-black text-white">{formatTime(time)}</div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                                    <div>
-                                        <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Distância</div>
-                                        <div className="text-3xl font-black text-white italic">{distance.toFixed(2)}<span className="text-sm not-italic ml-1 text-zinc-400 font-normal">km</span></div>
+                                {/* Footer */}
+                                <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20">
+                                            <MapPin size={16} className="text-white" />
+                                        </div>
+                                        <div>
+                                            <div className="text-xs font-bold text-white">ModoFoco</div>
+                                            <div className="text-[10px] text-zinc-500">App de alta performance</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Tempo</div>
-                                        <div className="text-3xl font-black text-white italic">{formatTime(time)}</div>
-                                    </div>
-                                    <div className="col-span-2 pt-4 border-t border-white/10 flex items-center justify-between">
-                                        <div className="text-xs text-zinc-400">Energia gasta</div>
-                                        <div className="text-xl font-bold text-orange-400">{calories} <span className="text-sm text-zinc-500">kcal</span></div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-auto pt-6 flex justify-center">
-                                    <div className="text-[10px] text-zinc-600 font-mono">
-                                        {new Date().toLocaleDateString('pt-BR')} • {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    <div className="text-right">
+                                        <div className="text-[10px] text-zinc-500 uppercase font-bold">Energia</div>
+                                        <div className="text-sm font-bold text-orange-400">{calories} kcal</div>
                                     </div>
                                 </div>
                             </div>
