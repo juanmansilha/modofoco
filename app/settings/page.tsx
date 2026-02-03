@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
-import { User, Mail, Lock, CreditCard, Trash2, Camera, LogOut, Check } from "lucide-react";
+import { User, Mail, Lock, CreditCard, Trash2, Camera, LogOut, Check, Bell } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -197,6 +197,27 @@ export default function SettingsPage() {
                         <div className="flex justify-end pt-4 border-t border-white/5">
                             <Button onClick={handleSaveProfile} className="bg-indigo-600 hover:bg-indigo-500 text-white">
                                 Salvar Alterações
+                            </Button>
+                        </div>
+                    </Card>
+                </section>
+
+                {/* Notification Section */}
+                <section>
+                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Bell size={20} className="text-indigo-500" /> Notificações
+                    </h2>
+                    <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 className="font-bold text-white">Alertas do Sistema</h3>
+                            <p className="text-zinc-400 text-sm">Ative para receber alertas sobre tarefas e hábitos.</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="secondary" onClick={() => useNotifications().requestPermission()}>
+                                Ativar Permissão
+                            </Button>
+                            <Button variant="outline" onClick={() => addNotification("Teste", "Isso é um teste de notificação!")}>
+                                Testar Agora
                             </Button>
                         </div>
                     </Card>

@@ -18,6 +18,7 @@ interface NotificationContextType {
     markAsRead: (id: string) => void;
     deleteNotification: (id: string) => void;
     clearAll: () => void;
+    requestPermission: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -127,6 +128,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         setNotifications([]);
     };
 
+    const requestPermission = async () => {
+        if ("Notification" in window) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                addNotification("Sucesso", "Notificações ativas!");
+            }
+        }
+    };
+
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
@@ -136,7 +146,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             addNotification,
             markAsRead,
             deleteNotification,
-            clearAll
+            clearAll,
+            requestPermission
         }}>
             {children}
             <ToastContainer toasts={toasts} removeToast={removeToast} />
