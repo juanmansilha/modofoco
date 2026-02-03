@@ -7,6 +7,8 @@ interface AccountCardProps {
     id: string;
     name: string;
     balance: number;
+    type: string;
+    color: string;
     credit_limit?: number;
     account_limit?: number;
     onEdit: (id: string) => void;
