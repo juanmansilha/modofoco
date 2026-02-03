@@ -100,7 +100,7 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                             {/* Bank Presets */}
                             <div>
                                 <label className="block text-sm text-zinc-400 mb-3">Selecione a Instituição</label>
-                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-4">
+                                <div className="space-y-2 max-h-[240px] overflow-y-auto custom-scrollbar pr-2">
                                     {[
                                         { name: "Nubank", color: "#820ad1", logo: "/banks/nubank.png" },
                                         { name: "Banco do Brasil", color: "#fbfd00", logo: "/banks/bb.png" },
@@ -108,6 +108,7 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                         { name: "Itaú", color: "#ec7000", logo: "/banks/itau.png" },
                                         { name: "Bradesco", color: "#cc092f", logo: "/banks/bradesco.jpg" },
                                         { name: "Inter", color: "#ff7a00", logo: "/banks/inter.png" },
+                                        { name: "Inter PJ", color: "#ff7a00", logo: "/banks/inter_pj.png" },
                                         { name: "Caixa", color: "#1f8ef0", logo: "/banks/caixa.png" },
                                     ].map((bank) => (
                                         <button
@@ -118,13 +119,18 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                                 setColor(bank.color);
                                                 setLogoUrl(bank.logo);
                                             }}
-                                            className="flex flex-col items-center gap-2 group"
+                                            className={`w-full flex items-center gap-4 p-3 rounded-2xl border transition-all group ${name === bank.name ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/5 bg-zinc-900/50 hover:bg-zinc-900 hover:border-white/20'}`}
                                         >
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center p-2 border transition-all relative overflow-hidden bg-white ${name === bank.name ? 'border-indigo-500 ring-2 ring-indigo-500/50' : 'border-white/10 group-hover:border-white/30'}`}>
+                                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10 relative overflow-hidden shrink-0 bg-white">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={bank.logo} alt={bank.name} className="w-full h-full object-contain" />
+                                                <img src={bank.logo} alt={bank.name} className="w-full h-full object-cover" />
                                             </div>
-                                            <span className="text-[10px] font-medium text-zinc-400 text-center truncate w-full group-hover:text-white transition-colors">{bank.name}</span>
+                                            <div className="flex flex-col items-start">
+                                                <span className={`font-semibold text-sm ${name === bank.name ? 'text-white' : 'text-zinc-300 group-hover:text-white'}`}>{bank.name}</span>
+                                            </div>
+                                            {name === bank.name && (
+                                                <div className="ml-auto w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                                            )}
                                         </button>
                                     ))}
                                 </div>
