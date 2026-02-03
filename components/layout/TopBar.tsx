@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image"; // Added import
-import { Bell, LogOut, ChevronRight, Trophy } from "lucide-react";
+import { Bell, LogOut, ChevronRight, Trophy, Search, Menu } from "lucide-react"; // Merged lucide-react imports
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useGamification } from "@/contexts/GamificationContext";
 import { NotificationPanel } from "@/components/ui/NotificationPanel";
+import { useGlobalData } from "@/contexts/GlobalDataProvider"; // Added import
+import { FalconIcon } from "@/components/falcon/FalconIcon"; // Added import
 
 export function TopBar() {
     const [showNotifications, setShowNotifications] = useState(false);

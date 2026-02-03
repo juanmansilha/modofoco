@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
-import { User, Mail, Lock, CreditCard, Trash2, Camera, LogOut, Check, Bell } from "lucide-react";
+import { User, Mail, Lock, CreditCard, Trash2, Camera, LogOut, Check, Bell, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { uploadAvatar } from "@/lib/supabase-storage";
+import { FalconConfigModal } from "@/components/falcon/FalconConfigModal";
+import { FalconIcon } from "@/components/falcon/FalconIcon";
 
 export default function SettingsPage() {
     const { userData, updateUserData, logout } = useGlobalData();
@@ -316,6 +318,26 @@ export default function SettingsPage() {
                     </Card>
                 </section>
 
+                {/* Falcon Assistant Section */}
+                <section>
+                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <MessageCircle size={20} className="text-green-500" /> Assistente Falcon
+                    </h2>
+                    <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 className="font-bold text-white">WhatsApp Assistant</h3>
+                            <p className="text-zinc-400 text-sm">Receba resumos e alertas direto no seu WhatsApp.</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <FalconIcon />
+                            {/* FalconIcon handles the modal opening, so we just place it here or use a custom button trigger if needed. 
+                                 Actually, let's make a dedicated button here to be clearer. 
+                             */}
+                            <SettingsFalconButton />
+                        </div>
+                    </Card>
+                </section>
+
                 {/* Danger Zone */}
                 <section>
                     <h2 className="text-xl font-bold text-red-500 mb-4 flex items-center gap-2">
@@ -337,5 +359,23 @@ export default function SettingsPage() {
                 </section>
             </div>
         </div>
+    );
+}
+
+function SettingsFalconButton() {
+    const { userData } = useGlobalData();
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <>
+            <Button
+                variant={userData.falconEnabled ? "outline" : "default"}
+                className={userData.falconEnabled ? "border-green-500/50 text-green-400 hover:bg-green-500/10" : "bg-green-600 hover:bg-green-500 text-white"}
+                onClick={() => setIsOpen(true)}
+            >
+                {userData.falconEnabled ? "Reconfigurar" : "Conectar WhatsApp"}
+            </Button>
+            <FalconConfigModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+        </>
     );
 }
