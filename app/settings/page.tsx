@@ -14,7 +14,7 @@ import { uploadAvatar } from "@/lib/supabase-storage";
 
 export default function SettingsPage() {
     const { userData, updateUserData, logout } = useGlobalData();
-    const { addNotification } = useNotifications();
+    const { addNotification, requestPermission } = useNotifications();
     const router = useRouter();
 
     // Local state for form fields
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                             <p className="text-zinc-400 text-sm">Ative para receber alertas sobre tarefas e hábitos.</p>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="secondary" onClick={() => useNotifications().requestPermission()}>
+                            <Button variant="secondary" onClick={() => requestPermission()}>
                                 Ativar Permissão
                             </Button>
                             <Button variant="outline" onClick={() => addNotification("Teste", "Isso é um teste de notificação!")}>
