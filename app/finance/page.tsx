@@ -12,6 +12,8 @@ import { TransactionModal } from "@/components/finance/TransactionModal";
 import { TransferModal } from "@/components/finance/TransferModal";
 import { FinanceChart } from "@/components/finance/FinanceChart";
 import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
+import { MonthlyHistoryChart } from "@/components/finance/MonthlyHistoryChart";
+import { FinancialHealthCard } from "@/components/finance/FinancialHealthCard";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
 import { useGamification } from "@/contexts/GamificationContext";
@@ -415,7 +417,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
@@ -426,7 +428,7 @@ export default function FinancePage() {
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><TrendingUp size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Entradas Confirmadas</span>
+                            <span className="text-zinc-400 text-sm">Entradas (Mês)</span>
                         </div>
                         <p className="text-2xl font-bold text-white">{stats.confirmedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                         {stats.pendingIncome > 0 && (
@@ -441,7 +443,7 @@ export default function FinancePage() {
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Saídas Confirmadas</span>
+                            <span className="text-zinc-400 text-sm">Saídas (Mês)</span>
                         </div>
                         <p className="text-2xl font-bold text-white">{stats.confirmedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                         {stats.pendingExpense > 0 && (
@@ -453,24 +455,39 @@ export default function FinancePage() {
                             </div>
                         )}
                     </div>
+
+                    {/* NEW: Financial Health Card */}
+                    <FinancialHealthCard transactions={transactions} currentMonth={currentMonth} />
                 </div>
 
-                {/* Charts Area - STACKED SIDE BY SIDE on Large */}
+                {/* Charts Area */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                    {/* Cash Flow Chart */}
+                    {/* Cash Flow Chart - Daily */}
                     <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
-                        <h3 className="text-lg font-bold text-white mb-6">Fluxo de Caixa</h3>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-white">Fluxo Diário</h3>
+                            <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded-md border border-white/5">Este Mês</span>
+                        </div>
                         <FinanceChart data={chartData} />
                     </section>
 
                     {/* Expenses Chart */}
                     <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
-                        <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
-                        <div className="h-[350px] w-full">
+                        <h3 className="text-lg font-bold text-white mb-6">Por Categoria</h3>
+                        <div className="h-[300px] w-full">
                             <ExpensePieChart data={expenseCategoryData} />
                         </div>
                     </section>
                 </div>
+
+                {/* NEW: Monthly History (Full Width) */}
+                <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-white">Histórico Semestral</h3>
+                        <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded-md border border-white/5">Últimos 6 meses</span>
+                    </div>
+                    <MonthlyHistoryChart transactions={transactions} />
+                </section>
 
                 {/* Main Grid: Accounts & Transactions */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
