@@ -13,7 +13,6 @@ export default function OneSignalSetup() {
                     notifyButton: {
                         enable: true,
                         size: 'medium',
-                        theme: 'default',
                         position: 'bottom-right',
                         showCredit: false,
                         text: {
