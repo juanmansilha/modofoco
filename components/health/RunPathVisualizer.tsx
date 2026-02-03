@@ -12,19 +12,21 @@ interface RunPathVisualizerProps {
     strokeColor?: string;
     strokeWidth?: number;
     className?: string;
+    showMarkers?: boolean;
 }
 
 export function RunPathVisualizer({
     points,
     strokeColor = "#f97316", // orange-500
     strokeWidth = 3,
-    className = ""
+    className = "",
+    showMarkers = true
 }: RunPathVisualizerProps) {
 
     // Calculate the path data and viewBox
-    const { pathData, viewBox } = useMemo(() => {
+    const { pathData, viewBox, startPoint, endPoint } = useMemo(() => {
         if (!points || points.length < 2) {
-            return { pathData: "", viewBox: "0 0 100 100" };
+            return { pathData: "", viewBox: "0 0 100 100", startPoint: null, endPoint: null };
         }
 
         let minLat = Infinity, maxLat = -Infinity;
@@ -48,48 +50,43 @@ export function RunPathVisualizer({
         minLng -= paddingLng;
         maxLng += paddingLng;
 
-        // Aspect Ratio Preservation logic
-        // We want to map these geo-coords to a 100x100 (or aspect correct) SVG space
-        // BUT, lat/lng aren't perfectly square. For visual approximation on small scale, it's fine.
-        // Let's normalize everything to 0..100 range based on the largest dimension to preserve shape.
-
         const width = (maxLng - minLng);
         const height = (maxLat - minLat);
-
-        // We will project to a 100x100 viewport, but center the shape
-        // Map lng -> x, lat -> y (inverted because SVG y goes down, Lat goes up)
 
         const scale = 100 / Math.max(width, height);
 
         const project = (lat: number, lng: number) => {
             const x = (lng - minLng) * scale;
-            // Invert Y: maxLat should be 0 (top), minLat should be 100 (bottom)
-            // actually:  (maxLat - lat) * scale
             const y = (maxLat - lat) * scale;
             return { x, y };
         };
 
-        // Center it if aspect ratio is not 1:1
         const drawnWidth = width * scale;
         const drawnHeight = height * scale;
         const offsetX = (100 - drawnWidth) / 2;
         const offsetY = (100 - drawnHeight) / 2;
 
         let d = "";
+        let start = null;
+        let end = null;
+
         points.forEach((p, i) => {
             const { x, y } = project(p.lat, p.lng);
-            // Add offsets
             const finalX = x + offsetX;
             const finalY = y + offsetY;
 
             if (i === 0) {
                 d += `M ${finalX.toFixed(2)} ${finalY.toFixed(2)}`;
+                start = { x: finalX, y: finalY };
             } else {
                 d += ` L ${finalX.toFixed(2)} ${finalY.toFixed(2)}`;
+                if (i === points.length - 1) {
+                    end = { x: finalX, y: finalY };
+                }
             }
         });
 
-        return { pathData: d, viewBox: "0 0 100 100" };
+        return { pathData: d, viewBox: "0 0 100 100", startPoint: start, endPoint: end };
 
     }, [points]);
 
@@ -108,7 +105,6 @@ export function RunPathVisualizer({
             preserveAspectRatio="xMidYMid meet"
             xmlns="http://www.w3.org/2000/svg"
         >
-            {/* Optional drop shadow filter */}
             <defs>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
                     <feGaussianBlur stdDeviation="2" result="blur" />
@@ -125,17 +121,30 @@ export function RunPathVisualizer({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 filter="url(#glow)"
-                vectorEffect="non-scaling-stroke" // Keeps stroke constant width regardless of scale
+                vectorEffect="non-scaling-stroke"
             />
 
-            {/* Start Dot */}
-            {points.length > 0 && (() => {
-                // Re-calculate start point projection (duplicate logic, but cheap)
-                // Or we could parse logic. Let's simplfy: We usually don't need markers for "Art" style
-                // But user might want them. Let's keep it clean "Strava style" (just the line) for now.
-                return null;
-            })()}
+            {showMarkers && startPoint && (
+                <circle
+                    cx={startPoint.x}
+                    cy={startPoint.y}
+                    r={2}
+                    fill="#22c55e" // green-500
+                    stroke="#000"
+                    strokeWidth={0.5}
+                />
+            )}
 
+            {showMarkers && endPoint && (
+                <circle
+                    cx={endPoint.x}
+                    cy={endPoint.y}
+                    r={2}
+                    fill="#ef4444" // red-500
+                    stroke="#000"
+                    strokeWidth={0.5}
+                />
+            )}
         </svg>
     );
 }

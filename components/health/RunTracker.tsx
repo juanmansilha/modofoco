@@ -289,7 +289,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-zinc-950 to-orange-900/20 pointer-events-none" />
 
                             {/* Map Top (60%) */}
-                            <div className="h-[60%] relative bg-[#09090b] flex items-center justify-center p-8">
+                            <div className="h-[60%] relative bg-[#09090b] flex items-center justify-center p-16">
                                 {(points.length > 0 || actualPath.length > 0) ? (
                                     <RunPathVisualizer
                                         points={actualPath.length > 0 ? actualPath : points}
@@ -361,18 +361,18 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                         </div>
 
                         <Button
-                            className="w-full bg-zinc-100 hover:bg-white text-zinc-950 py-6 text-lg font-bold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-6 text-lg font-bold shadow-xl shadow-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={handleShareFromModal}
                             disabled={isSharing}
                         >
                             {isSharing ? (
                                 <span className="flex items-center animate-pulse">
-                                    <div className="w-4 h-4 border-2 border-zinc-950/30 border-t-zinc-950 rounded-full animate-spin mr-2" />
-                                    Salvando...
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                    Gerando Story...
                                 </span>
                             ) : (
                                 <span className="flex items-center">
-                                    <Share2 className="mr-2" /> Salvar Imagem
+                                    <Share2 className="mr-2" /> Compartilhar no Instagram
                                 </span>
                             )}
                         </Button>
