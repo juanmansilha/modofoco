@@ -124,30 +124,36 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
             const dataUrl = await toPng(shareRef.current, {
                 cacheBust: true,
                 backgroundColor: '#09090b',
-                pixelRatio: 2,
-                skipAutoScale: true
+                pixelRatio: 1, // Reduced for mobile stability
             });
 
             // Check if Web Share API is supported (Mobile)
             if (navigator.share) {
                 const blob = await (await fetch(dataUrl)).blob();
                 const file = new File([blob], "modofoco-story.png", { type: "image/png" });
-                await navigator.share({
-                    files: [file],
-                    title: 'Minha Corrida no ModoFoco',
-                });
+
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Minha Corrida no ModoFoco',
+                    });
+                    addNotification("Sucesso", "Compartilhado!");
+                } catch (shareError) {
+                    // User cancelled or share failed, try download fallback
+                    if ((shareError as Error).name !== 'AbortError') throw shareError;
+                }
             } else {
                 // Fallback to download
                 const link = document.createElement('a');
                 link.download = `modofoco-run-${new Date().toISOString()}.png`;
                 link.href = dataUrl;
                 link.click();
+                addNotification("Sucesso", "Imagem salva!");
             }
-            addNotification("Sucesso", "Pronto para compartilhar!");
             setIsShareModalOpen(false);
         } catch (e) {
             console.error(e);
-            addNotification("Erro", "Não foi possível gerar o story. Tente novamente.");
+            addNotification("Erro", "Não foi possível gerar a imagem. Tente novamente.");
         } finally {
             setIsSharing(false);
         }
