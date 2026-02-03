@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Play, Pause, Square, Share2, MapPin, Trash2, ArrowLeft } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 
 // Dynamic import for Leaflet map to avoid SSR issues
 const RunMap = dynamic(() => import("./RunMap"), { ssr: false });
@@ -104,10 +104,10 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
     const handleShare = async () => {
         if (!resultRef.current) return;
         try {
-            const canvas = await html2canvas(resultRef.current, { useCORS: true, backgroundColor: '#09090b' });
+            const dataUrl = await toPng(resultRef.current, { cacheBust: true, backgroundColor: '#09090b', pixelRatio: 2 });
             const link = document.createElement('a');
             link.download = `modofoco-run-${new Date().toISOString()}.png`;
-            link.href = canvas.toDataURL();
+            link.href = dataUrl;
             link.click();
             addNotification("Imagem Salva", "Compartilhe sua conquista no Instagram!");
         } catch (e) {
