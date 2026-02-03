@@ -407,18 +407,18 @@ export default function FinancePage() {
                     </div>
                 </div>
 
-                {/* Charts Area - STACKED */}
-                <div className="flex flex-col gap-6">
+                {/* Charts Area - STACKED SIDE BY SIDE on Large */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     {/* Cash Flow Chart */}
-                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
                         <h3 className="text-lg font-bold text-white mb-6">Fluxo de Caixa</h3>
                         <FinanceChart data={chartData} />
                     </section>
 
                     {/* Expenses Chart */}
-                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl">
+                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
                         <h3 className="text-lg font-bold text-white mb-6">Despesas por Categoria</h3>
-                        <div className="h-[350px]">
+                        <div className="h-[350px] w-full">
                             <ExpensePieChart data={expenseCategoryData} />
                         </div>
                     </section>

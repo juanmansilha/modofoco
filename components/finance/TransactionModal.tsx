@@ -19,7 +19,6 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
     const [type, setType] = useState<"income" | "expense">("expense");
     const [category, setCategory] = useState("other");
     const [accountId, setAccountId] = useState("");
-    const [targetAccountId, setTargetAccountId] = useState(""); // For transfers/invoice payment
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [isConfirmed, setIsConfirmed] = useState(true);
 
@@ -30,7 +29,6 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             setType(initialData.type);
             setCategory(initialData.category);
             setAccountId(initialData.accountId);
-            setTargetAccountId(initialData.targetAccountId || "");
             setIsConfirmed(initialData.confirmed !== false);
             // Correctly parse date string (YYYY-MM-DD or ISO) to input format
             const dateStr = initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
@@ -41,7 +39,6 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             setType("expense");
             setCategory("other");
             setIsConfirmed(true);
-            setTargetAccountId("");
             if (accounts.length > 0) setAccountId(accounts[0].id);
             setDate(new Date().toISOString().split('T')[0]);
         }
@@ -61,7 +58,6 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
             type,
             category,
             accountId,
-            targetAccountId, // Pass this up
             // Append a specific time (noon) to avoid timezone shifts when saving to UTC
             date: `${date}T12:00:00`,
             confirmed: isConfirmed
@@ -173,30 +169,7 @@ export function TransactionModal({ isOpen, onClose, onSave, accounts, categories
                             </div>
 
                             {/* Invoice Payment / Transfer Logic */}
-                            {type === 'expense' && (
-                                <div className="bg-zinc-900/50 p-3 rounded-xl border border-white/5">
-                                    <label className="block text-sm text-zinc-400 mb-2">É pagamento de fatura? (Opcional)</label>
-                                    <select
-                                        value={targetAccountId}
-                                        onChange={(e) => setTargetAccountId(e.target.value)}
-                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-                                    >
-                                        <option value="">Não, despesa comum</option>
-                                        {accounts
-                                            // .filter(acc => acc.credit_limit > 0) // Ideally filter for credit cards
-                                            .filter(acc => acc.id !== accountId) // Don't allow paying itself
-                                            .map(acc => (
-                                                <option key={acc.id} value={acc.id}>Pagar Fatura: {acc.name}</option>
-                                            ))
-                                        }
-                                    </select>
-                                    {targetAccountId && (
-                                        <p className="text-[10px] text-zinc-500 mt-2">
-                                            Ao confirmar, o valor sairá da conta <strong>{accounts.find(a => a.id === accountId)?.name}</strong> e restaurará o limite de <strong>{accounts.find(a => a.id === targetAccountId)?.name}</strong>.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
+
 
                             <div className="flex gap-4">
                                 <div className="flex-1">
