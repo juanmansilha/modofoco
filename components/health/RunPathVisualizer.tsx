@@ -26,7 +26,12 @@ export function RunPathVisualizer({
     // Calculate the path data and viewBox
     const { pathData, viewBox, startPoint, endPoint } = useMemo(() => {
         if (!points || points.length < 2) {
-            return { pathData: "", viewBox: "0 0 100 100", startPoint: null, endPoint: null };
+            return {
+                pathData: "",
+                viewBox: "0 0 100 100",
+                startPoint: null as { x: number; y: number } | null,
+                endPoint: null as { x: number; y: number } | null
+            };
         }
 
         let minLat = Infinity, maxLat = -Infinity;
