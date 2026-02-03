@@ -37,7 +37,7 @@ export default function RootLayout({
       >
         <IntroAnimation>
           <OneSignalScript />
-          <ServiceWorkerRegister />
+
           <GlobalDataProvider>
             <AppShell>
               {children}
