@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     photo TEXT,
     focus TEXT[], -- Array of strings
     discovery TEXT,
+    falcon_enabled BOOLEAN DEFAULT FALSE,
     onboarding_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -825,7 +825,8 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     photo: profile.photo || null,
                     onboardingCompleted: profile.onboarding_completed || false,
                     focus: profile.focus || [],
-                    discovery: profile.discovery || ""
+                    discovery: profile.discovery || "",
+                    falconEnabled: profile.falcon_enabled || false
                 });
                 setUserId(session.user.id);
             }
