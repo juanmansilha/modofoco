@@ -35,22 +35,63 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
 
     const handleConnect = async () => {
         setIsLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Save to Global Data
-        updateUserData({
-            whatsapp: phone.replace(/\D/g, ""), // Save raw numbers
-            falconEnabled: true
-        });
+        try {
+            // First send a test "Welcome" message to verify connection
+            const response = await fetch('/api/falcon/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone,
+                    message: "🦅 Falcon conectado com sucesso! Exemplo de alerta do ModoFoco."
+                })
+            });
 
-        setIsLoading(false);
-        setStep("success");
+            if (!response.ok) {
+                // Determine if it's a 401/403 (Auth) or 404 (Instance not found)
+                const err = await response.json();
+                alert(`Erro de conexão: ${err.error || "Verifique o servidor Evo"}`);
+                setIsLoading(false);
+                return;
+            }
+
+            // Save to Global Data only if success
+            updateUserData({
+                whatsapp: phone.replace(/\D/g, ""),
+                falconEnabled: true
+            });
+
+            setStep("success");
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao conectar. Verifique sua internet.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleTestMessage = async () => {
-        alert(` Enviando mensagem de teste para: ${phone} (Simulação)`);
-        // Aqui chamaria o /api/webhook/whatsapp/send posteriormente
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/falcon/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone,
+                    message: "🔔 Teste: Não esqueça de beber água e focar na meta!"
+                })
+            });
+
+            if (response.ok) {
+                alert(`Mensagem enviada para: ${phone}`);
+            } else {
+                alert("Falha ao enviar. Verifique o console.");
+            }
+        } catch (e) {
+            alert("Erro de rede.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

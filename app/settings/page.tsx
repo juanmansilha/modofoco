@@ -16,7 +16,7 @@ import { FalconIcon } from "@/components/falcon/FalconIcon";
 
 export default function SettingsPage() {
     const { userData, updateUserData, logout } = useGlobalData();
-    const { addNotification, requestPermission } = useNotifications();
+    const { addNotification } = useNotifications();
     const router = useRouter();
 
     // Local state for form fields
@@ -204,26 +204,7 @@ export default function SettingsPage() {
                     </Card>
                 </section>
 
-                {/* Notification Section */}
-                <section>
-                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <Bell size={20} className="text-indigo-500" /> Notificações
-                    </h2>
-                    <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div>
-                            <h3 className="font-bold text-white">Alertas do Sistema</h3>
-                            <p className="text-zinc-400 text-sm">Ative para receber alertas sobre tarefas e hábitos.</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="secondary" onClick={() => requestPermission()}>
-                                Ativar Permissão
-                            </Button>
-                            <Button variant="outline" onClick={() => addNotification("Teste", "Isso é um teste de notificação!")}>
-                                Testar Agora
-                            </Button>
-                        </div>
-                    </Card>
-                </section>
+
 
                 {/* Security Section */}
                 <section>
