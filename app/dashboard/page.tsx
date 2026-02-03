@@ -59,9 +59,9 @@ export default function DashboardPage() {
         income: number;
         pendingIncome: number;
         pendingExpenses: number;
-        nextBill?: any;
+        upcomingBills?: any[];
         overdueBills?: any[];
-    }>({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0, nextBill: null, overdueBills: [] });
+    }>({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0, upcomingBills: [], overdueBills: [] });
     const [chartData, setChartData] = useState<any[]>([]);
     const [expenseCategoryData, setExpenseCategoryData] = useState<any[]>([]);
     const [accounts, setAccounts] = useState<any[]>([]); // New state
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                         t.confirmed === false &&
                         tDate >= today;
                 }).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                    .slice(0, 1); // Get the very next one
+                    .slice(0, 3); // Get next 3
 
                 // Overdue pending expenses (Strictly BEFORE today)
                 const overduePending = transactions.filter((t: any) => {
@@ -128,8 +128,6 @@ export default function DashboardPage() {
                         t.confirmed === false &&
                         t.date < todayStr;
                 }).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-                const nextBill = futurePending.length > 0 ? futurePending[0] : null;
 
                 monthTransactions.forEach((t: any) => {
                     if (t.type === 'income') {
@@ -147,7 +145,7 @@ export default function DashboardPage() {
                     income: confirmedIncome,
                     pendingIncome,
                     pendingExpenses,
-                    nextBill: nextBill,
+                    upcomingBills: futurePending,
                     overdueBills: overduePending // Pass overdue bills
                 });
 

@@ -7,7 +7,7 @@ interface FinancialSummaryCardProps {
         expenses: number;
         pendingIncome: number;
         pendingExpenses: number;
-        nextBill?: any;
+        upcomingBills?: any[];
         overdueBills?: any[];
     };
     categoryData: any[];
@@ -16,7 +16,6 @@ interface FinancialSummaryCardProps {
 export function FinancialSummaryCard({ financialData, categoryData }: FinancialSummaryCardProps) {
     const totalFlow = financialData.income + financialData.expenses;
     // const savingsRate = totalFlow > 0 ? ((financialData.income - financialData.expenses) / financialData.income) * 100 : 0;
-    const nextBill = financialData.nextBill;
 
     return (
         <Card className="p-6 border-white/5 bg-zinc-900/30 space-y-6">
@@ -109,40 +108,60 @@ export function FinancialSummaryCard({ financialData, categoryData }: FinancialS
                     )}
                 </p>
 
-                <div className={`rounded-xl border p-3 flex items-center justify-between ${financialData.overdueBills && financialData.overdueBills.length > 0
-                    ? "bg-red-500/10 border-red-500/20"
-                    : "bg-zinc-900/50 border-white/5"
-                    }`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${financialData.overdueBills && financialData.overdueBills.length > 0
-                            ? "bg-red-500/20 text-red-500"
-                            : "bg-zinc-800 text-zinc-400"
-                            }`}>
-                            {financialData.overdueBills && financialData.overdueBills.length > 0 ? <AlertCircle size={16} /> : <TrendingUp size={16} />}
-                        </div>
-                        <div>
-                            {financialData.overdueBills && financialData.overdueBills.length > 0 ? (
-                                <>
-                                    <p className="text-sm font-bold text-white">{financialData.overdueBills.length} conta(s) pendente(s)</p>
+                <div className="space-y-3">
+                    {financialData.overdueBills && financialData.overdueBills.length > 0 ? (
+                        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center shrink-0">
+                                    <AlertCircle size={16} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-white">{financialData.overdueBills.length} conta(s) em atraso</p>
                                     <p className="text-xs text-red-400">
                                         Total: {financialData.overdueBills.reduce((acc: number, curr: any) => acc + curr.amount, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                     </p>
-                                </>
-                            ) : nextBill ? (
-                                <>
-                                    <p className="text-sm font-medium text-white">{nextBill.description}</p>
-                                    <p className="text-xs text-zinc-500">
-                                        {new Date(nextBill.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} • {nextBill.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-sm font-medium text-white">Sem contas próximas</p>
-                                    <p className="text-xs text-zinc-500">Parabéns!</p>
-                                </>
-                            )}
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <></>
+                    )}
+
+                    {/* Upcoming List */}
+                    {(!financialData.overdueBills || financialData.overdueBills.length === 0) && (
+                        financialData.upcomingBills && financialData.upcomingBills.length > 0 ? (
+                            <div className="space-y-2">
+                                {financialData.upcomingBills.slice(0, 3).map((bill: any, idx: number) => (
+                                    <div key={idx} className="rounded-xl border border-white/5 bg-zinc-900/50 p-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center shrink-0">
+                                                <TrendingUp size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-white">{bill.description}</p>
+                                                <p className="text-xs text-zinc-500">
+                                                    {new Date(bill.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm font-bold text-white">
+                                            {bill.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-white/5 bg-zinc-900/50 p-3 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center shrink-0">
+                                    <TrendingUp size={16} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-white">Sem contas próximas</p>
+                                    <p className="text-xs text-zinc-500">Tudo em dia!</p>
+                                </div>
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
 
