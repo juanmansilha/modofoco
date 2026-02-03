@@ -293,7 +293,7 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                                 {(points.length > 0 || actualPath.length > 0) ? (
                                     <RunPathVisualizer
                                         points={actualPath.length > 0 ? actualPath : points}
-                                        className="w-full h-full drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]"
+                                        className="w-full h-full drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]"
                                         strokeColor="#f97316"
                                         strokeWidth={4}
                                     />
