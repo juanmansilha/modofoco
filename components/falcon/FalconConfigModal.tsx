@@ -82,29 +82,7 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
         }
     };
 
-    const handleTestMessage = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/falcon/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone,
-                    message: "🔔 Teste: Não esqueça de beber água e focar na meta!"
-                })
-            });
 
-            if (response.ok) {
-                alert(`Mensagem enviada para: ${phone}`);
-            } else {
-                alert("Falha ao enviar. Verifique o console.");
-            }
-        } catch (e) {
-            alert("Erro de rede.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     if (!mounted) return null;
 
@@ -201,9 +179,6 @@ export function FalconConfigModal({ isOpen, onClose }: FalconConfigModalProps) {
                                 </p>
                             </div>
 
-                            <Button onClick={handleTestMessage} variant="secondary" className="w-full">
-                                Enviar Mensagem de Teste
-                            </Button>
                             <Button onClick={onClose} variant="ghost" className="w-full text-zinc-500 hover:text-white">
                                 Fechar
                             </Button>
