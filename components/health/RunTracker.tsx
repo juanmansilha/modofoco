@@ -105,13 +105,28 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
         setDistance(0);
     };
 
+    const [isSharing, setIsSharing] = useState(false);
+
     const handleShareFromModal = async () => {
         if (!shareRef.current) return;
+        setIsSharing(true);
         try {
-            // Wait for map tiles to load (fix white map issue)
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Force anonymous crossOrigin on all Leaflet tiles to avoid tainted canvas
+            const mapImages = Array.from(document.querySelectorAll('.leaflet-tile-pane img')) as HTMLImageElement[];
+            mapImages.forEach(img => {
+                img.crossOrigin = "anonymous";
+            });
 
-            const dataUrl = await toPng(shareRef.current, { cacheBust: true, backgroundColor: '#09090b', pixelRatio: 2 });
+            // Wait a bit for any re-fetches or re-renders
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Generate Image
+            const dataUrl = await toPng(shareRef.current, {
+                cacheBust: true,
+                backgroundColor: '#09090b',
+                pixelRatio: 2,
+                skipAutoScale: true
+            });
 
             // Check if Web Share API is supported (Mobile)
             if (navigator.share) {
@@ -132,7 +147,9 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
             setIsShareModalOpen(false);
         } catch (e) {
             console.error(e);
-            addNotification("Erro", "Não foi possível gerar o story.");
+            addNotification("Erro", "Não foi possível gerar o story. Tente novamente.");
+        } finally {
+            setIsSharing(false);
         }
     };
 
@@ -345,8 +362,21 @@ export function RunTracker({ onBack, onSave }: RunTrackerProps) {
                             </div>
                         </div>
 
-                        <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-6 text-lg font-bold shadow-xl shadow-indigo-900/20" onClick={handleShareFromModal}>
-                            <Share2 className="mr-2" /> Compartilhar no Instagram
+                        <Button
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-6 text-lg font-bold shadow-xl shadow-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleShareFromModal}
+                            disabled={isSharing}
+                        >
+                            {isSharing ? (
+                                <span className="flex items-center animate-pulse">
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                    Gerando Story...
+                                </span>
+                            ) : (
+                                <span className="flex items-center">
+                                    <Share2 className="mr-2" /> Compartilhar no Instagram
+                                </span>
+                            )}
                         </Button>
                     </div>
                 </div>
