@@ -18,14 +18,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { userData, isAuthLoading } = useGlobalData();
     // More robust check dealing with potential null pathname or trailing slashes
-    const isLoginPage = pathname?.startsWith("/login") || pathname === "/onboarding";
+    // Treat /admin routes as "public" regarding user-auth (handled by admin layout)
+    const isPublicOrAdmin = pathname?.startsWith("/login") || pathname === "/onboarding" || pathname?.startsWith("/admin");
 
-    // Redirect to login if not authenticated
+    // Redirect to login if not authenticated (Skip for admin)
     useEffect(() => {
-        if (!isAuthLoading && !isLoginPage && !userData.email) {
+        if (!isAuthLoading && !isPublicOrAdmin && !userData.email) {
             router.push("/login");
         }
-    }, [userData.email, isLoginPage, router, isAuthLoading]);
+    }, [userData.email, isPublicOrAdmin, router, isAuthLoading]);
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -33,16 +34,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }, [pathname]);
 
     // Show loading screen while checking auth
-    if (isAuthLoading && !isLoginPage) {
+    if (isAuthLoading && !isPublicOrAdmin) {
         return <LoadingScreen />;
     }
 
     // Don't render protected content if not authenticated
-    if (!isLoginPage && !userData.email) {
+    if (!isPublicOrAdmin && !userData.email) {
         return <LoadingScreen />;
     }
 
-    const content = isLoginPage ? (
+    const content = isPublicOrAdmin ? (
         <main className="min-h-screen bg-[#050505]">{children}</main>
     ) : (
         <div className="flex h-screen overflow-hidden bg-[#050505]">
