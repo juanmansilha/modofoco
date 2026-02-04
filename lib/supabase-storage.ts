@@ -47,3 +47,31 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
         throw error;
     }
 }
+
+/**
+ * Uploads a campaign image to Supabase Storage and returns the public URL.
+ */
+export async function uploadCampaignImage(file: File): Promise<string> {
+    try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `campaigns/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('images')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName);
+
+        return publicUrl;
+    } catch (error) {
+        console.error('Error uploading campaign image:', error);
+        throw error;
+    }
+}
