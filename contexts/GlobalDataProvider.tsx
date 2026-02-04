@@ -51,6 +51,7 @@ export interface Meal {
     time: string;
     date: string;
     recurrence?: string[];
+    completedDates?: string[]; // Array of ISO date strings for recurring completion
 }
 
 export interface UserData {
@@ -921,10 +922,10 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
 
             // Health
             gymRoutines, runSessions, dietMeals, generalRoutines,
-            addGymRoutine, updateGymRoutine, deleteGymRoutine, toggleGymCompletion,
+            addGymRoutine, updateGymRoutine, deleteGymRoutine,
             addRunSession, updateRunSession, deleteRunSession, toggleRunCompletion,
             addMeal, updateMeal, deleteMeal, toggleMealCompletion,
-            addGeneralRoutine, updateGeneralRoutine, deleteGeneralRoutine,
+            addGeneralRoutine, updateGeneralRoutine, deleteGeneralRoutine, toggleGymCompletion,
 
             // Productivity
             tasks, goals, subjects, resources,
