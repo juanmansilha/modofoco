@@ -55,6 +55,7 @@ export interface Meal {
 }
 
 export interface UserData {
+    id?: string;
     name: string;
     email?: string;
     whatsapp?: string;

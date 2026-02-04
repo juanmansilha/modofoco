@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ToastContainer, ToastProps } from "@/components/ui/Toast";
+import { useGlobalData } from "./GlobalDataProvider";
 
 export interface Notification {
     id: string;
@@ -29,9 +30,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [toasts, setToasts] = useState<ToastProps[]>([]);
 
+    const { userData } = useGlobalData();
+    const userId = userData.id || "guest"; // Get user ID
+    const STORAGE_KEY = `modofoco-notifications-${userId}`;
+
     // Load from localStorage on mount and check expiry
     useEffect(() => {
-        const stored = localStorage.getItem("modofoco-notifications");
+        if (!userId) return; // Wait for user ID
+
+        const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
             try {
                 const parsed: Notification[] = JSON.parse(stored);
@@ -41,8 +48,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             } catch (e) {
                 console.error("Failed to parse notifications", e);
             }
+        } else {
+            setNotifications([]); // Clear if no storage for this user
         }
-    }, []);
+    }, [userId]); // Re-run when userId changes
 
     // Request permission logic (Restored)
     useEffect(() => {
@@ -75,8 +84,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Save to localStorage whenever notifications change
     useEffect(() => {
-        localStorage.setItem("modofoco-notifications", JSON.stringify(notifications));
-    }, [notifications]);
+        if (userId !== "guest") {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+        }
+    }, [notifications, userId, STORAGE_KEY]);
 
     const addNotification = (title: string, message: string) => {
         const id = crypto.randomUUID();

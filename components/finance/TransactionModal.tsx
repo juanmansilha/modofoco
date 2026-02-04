@@ -50,9 +50,9 @@ export function TransactionModal({
             setAmount(initialData.amount.toString());
             setType(initialData.type);
             setCategory(initialData.category);
-            setAccountId(initialData.accountId || initialData.account_id);
+            setAccountId(initialData.accountId || initialData.account_id || initialData.account?.id || "");
             setIsConfirmed(initialData.confirmed !== false);
-            setPaymentMethod(initialData.payment_method || "debit");
+            setPaymentMethod(initialData.payment_method || (initialData.credit_card_id ? "credit" : "debit"));
             setCreditCardId(initialData.credit_card_id || "");
             const dateStr = initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
             setDate(dateStr);
@@ -109,9 +109,37 @@ export function TransactionModal({
         }
 
         // For debit transactions (existing logic)
-        if (!accountId) {
-            alert("Selecione uma conta para a transação.");
-            return;
+        // For debit transactions (existing logic)
+        if (paymentMethod === "debit") {
+            if (!accountId) {
+                // If checking only accountId fails, try to grab the first account as fallback or alert
+                if (accounts.length > 0) {
+                    // Auto-select first account if none selected but available (UX fix)
+                    const firstId = accounts[0].id;
+                    setAccountId(firstId);
+                    // We continue with this ID
+                    onSave({
+                        description,
+                        amount: parseFloat(amount) || 0,
+                        type,
+                        category,
+                        accountId: firstId,
+                        date: `${date}T12:00:00`,
+                        confirmed: isConfirmed,
+                        payment_method: 'debit',
+                        recurrence: isRecurring ? {
+                            frequency,
+                            type: recurrenceType,
+                            installments: recurrenceType === 'fixed' ? installments : 12
+                        } : null
+                    });
+                    onClose();
+                    return;
+                }
+
+                alert("Selecione uma conta para a transação.");
+                return;
+            }
         }
 
         onSave({
