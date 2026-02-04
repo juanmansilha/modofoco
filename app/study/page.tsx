@@ -13,7 +13,7 @@ import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 
 export default function StudyPage() {
-    const { subjects, addSubject, updateSubject, deleteSubject } = useGlobalData();
+    const { subjects, addSubject, updateSubject, deleteSubject, toggleExternalTask } = useGlobalData();
     const { awardFP } = useGamification();
 
     // UI State
@@ -115,6 +115,7 @@ export default function StudyPage() {
                                     }}
                                     onDelete={() => handleDelete(subject.id)}
                                     onStartSession={() => handleStartFocus(subject.id)}
+                                    onToggleTask={(taskId) => toggleExternalTask('subject', subject.id, taskId)}
                                 />
                             ))}
                         </AnimatePresence>

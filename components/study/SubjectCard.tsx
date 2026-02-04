@@ -24,6 +24,7 @@ interface SubjectCardProps {
     onDelete?: () => void;
     onStartSession?: () => void;
     onView?: () => void;
+    onToggleTask?: (taskId: string) => void;
 }
 
 const categoryConfig = {
@@ -45,7 +46,8 @@ export function SubjectCard({
     onEdit,
     onDelete,
     onStartSession,
-    onView
+    onView,
+    onToggleTask
 }: SubjectCardProps) {
     const config = categoryConfig[category];
     const Icon = config.icon;
@@ -116,20 +118,33 @@ export function SubjectCard({
                 </div>
             </div>
 
-            {/* Next Task Preview */}
+            {/* Tasks Preview */}
             {tasks.length > 0 && (
-                <div className="mb-4 p-3 bg-black/20 rounded-xl border border-white/5">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-2">Próximo Passo</p>
-                    {nextTask ? (
-                        <div className="flex items-center gap-2 text-zinc-300 text-sm">
-                            <Circle size={14} className="text-indigo-400 shrink-0" />
-                            <span className="truncate">{nextTask.text}</span>
+                <div className="mb-4 p-3 bg-black/20 rounded-xl border border-white/5 space-y-2">
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Tarefas</p>
+                    {tasks.slice(0, 3).map(task => ( // Show up to 3 tasks
+                        <div
+                            key={task.id}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onToggleTask) onToggleTask(task.id);
+                            }}
+                            className="flex items-center gap-2 text-sm cursor-pointer hover:bg-white/5 p-1 rounded transition-colors"
+                        >
+                            {task.completed ? (
+                                <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+                            ) : (
+                                <Circle size={14} className="text-zinc-500 shrink-0 group-hover/item:text-indigo-400" />
+                            )}
+                            <span className={`truncate ${task.completed ? "text-zinc-500 line-through" : "text-zinc-300"}`}>
+                                {task.text}
+                            </span>
                         </div>
-                    ) : (
-                        <div className="flex items-center gap-2 text-green-400 text-sm">
-                            <CheckCircle2 size={14} />
-                            <span>Tudo concluído!</span>
-                        </div>
+                    ))}
+                    {tasks.length > 3 && (
+                        <p className="text-[10px] text-zinc-500 text-center pt-1">
+                            + {tasks.length - 3} tarefas
+                        </p>
                     )}
                 </div>
             )}

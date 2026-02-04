@@ -168,7 +168,13 @@ export async function getStudySubjects(userId: string) {
         .eq('user_id', userId);
 
     if (error) throw error;
-    return data || [];
+
+    return (data || []).map(subject => ({
+        ...subject,
+        dueDate: subject.due_date,
+        totalHours: subject.total_hours,
+        lastStudied: subject.last_studied
+    }));
 }
 
 export async function createStudySubject(subject: any) {
