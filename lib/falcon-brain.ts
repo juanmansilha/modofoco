@@ -288,6 +288,34 @@ export class FalconBrain {
         }
     }
 
+    private async awardPoints(amount: number, reason: string) {
+        // Fetch current points
+        const { data: profile } = await this.supabase
+            .from('profiles')
+            .select('fp, lifetime_fp')
+            .eq('id', this.userId)
+            .single();
+
+        if (profile) {
+            const newFP = (profile.fp || 0) + amount;
+            const newLifetime = (profile.lifetime_fp || 0) + amount;
+
+            // Update Profile
+            await this.supabase.from('profiles').update({
+                fp: newFP,
+                lifetime_fp: newLifetime
+            }).eq('id', this.userId);
+
+            // Log History
+            await this.supabase.from('gamification_history').insert({
+                user_id: this.userId,
+                amount: amount,
+                reason: reason,
+                type: 'earn'
+            });
+        }
+    }
+
     private handleUnknown(text: string): FalconResponse {
         // "AI Controlled" logic for fuzzy matching could go here.
         // For now, strict rule:
