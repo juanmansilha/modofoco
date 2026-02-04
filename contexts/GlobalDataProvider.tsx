@@ -29,6 +29,8 @@ export interface GymSession {
     recurrence?: string[];
     exercises: any[];
     completed?: boolean;
+    completed?: boolean; // Legacy
+    completedDates?: string[]; // New ISO string array
     lastPerformed?: string;
 }
 
@@ -144,6 +146,7 @@ interface GlobalDataContextType {
     addMeal: (meal: Meal) => void;
     updateMeal: (meal: Meal) => void;
     deleteMeal: (id: string) => void;
+    toggleMealCompletion: (id: string, date: string) => void;
 
     addGeneralRoutine: (routine: GlobalRoutine) => void;
     updateGeneralRoutine: (routine: GlobalRoutine) => void;
@@ -323,14 +326,31 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         }
     };
 
-    const toggleGymCompletion = async (id: string) => {
+    const toggleGymCompletion = async (id: string, date: Date | string) => {
         const routine = gymRoutines.find(r => r.id === id);
         if (!routine) return;
+
+        const dateStr = typeof date === 'string' ? date : format(date, "yyyy-MM-dd");
+        const currentDates = routine.completedDates || [];
+        const isCompletedNow = currentDates.includes(dateStr);
+
+        let newDates: string[];
+        if (isCompletedNow) {
+            newDates = currentDates.filter(d => d !== dateStr);
+        } else {
+            newDates = [...currentDates, dateStr];
+        }
+
         try {
-            const updated = await SupabaseHealth.updateGymSession(id, { completed: !routine.completed });
-            setGymRoutines(prev => prev.map(r => r.id === id ? updated : r));
+            // Optimistic update
+            const newRoutine = { ...routine, completedDates: newDates };
+            setGymRoutines(prev => prev.map(r => r.id === id ? newRoutine : r));
+
+            await SupabaseHealth.updateGymSession(id, { completedDates: newDates });
         } catch (e) {
             console.error("Error toggling gym completion:", e);
+            // Revert on error
+            setGymRoutines(prev => prev.map(r => r.id === id ? routine : r));
         }
     };
 
@@ -398,6 +418,33 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             setDietMeals(prev => prev.filter(item => item.id !== id));
         } catch (e) {
             console.error("Error deleting meal:", e);
+        }
+    };
+
+    const toggleMealCompletion = async (id: string, date: Date | string) => {
+        const meal = dietMeals.find(m => m.id === id);
+        if (!meal) return;
+
+        const dateStr = typeof date === 'string' ? date : format(date, "yyyy-MM-dd");
+        const currentDates = meal.completedDates || [];
+        const isCompletedNow = currentDates.includes(dateStr);
+
+        let newDates: string[];
+        if (isCompletedNow) {
+            newDates = currentDates.filter(d => d !== dateStr);
+        } else {
+            newDates = [...currentDates, dateStr];
+        }
+
+        try {
+            // Optimistic update
+            const newMeal = { ...meal, completedDates: newDates };
+            setDietMeals(prev => prev.map(item => item.id === id ? newMeal : item));
+
+            await SupabaseHealth.updateMeal(id, { completedDates: newDates });
+        } catch (e) {
+            console.error("Error toggling meal completion:", e);
+            setDietMeals(prev => prev.map(item => item.id === id ? meal : item));
         }
     };
 
@@ -868,9 +915,10 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
 
             // Health
             gymRoutines, runSessions, dietMeals, generalRoutines,
+            gymRoutines, runSessions, dietMeals, generalRoutines,
             addGymRoutine, updateGymRoutine, deleteGymRoutine, toggleGymCompletion,
             addRunSession, updateRunSession, deleteRunSession, toggleRunCompletion,
-            addMeal, updateMeal, deleteMeal,
+            addMeal, updateMeal, deleteMeal, toggleMealCompletion,
             addGeneralRoutine, updateGeneralRoutine, deleteGeneralRoutine,
 
             // Productivity
