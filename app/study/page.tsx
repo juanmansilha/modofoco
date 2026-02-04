@@ -29,7 +29,8 @@ export default function StudyPage() {
         if (editingSubject) {
             updateSubject({ ...subjectData, id: editingSubject.id });
         } else {
-            addSubject({ ...subjectData, id: Math.random().toString(36).substr(2, 9) });
+            // Let the backend generate the ID
+            addSubject(subjectData);
         }
         setIsModalOpen(false);
         setEditingSubject(null);
