@@ -20,7 +20,7 @@ const data = [
     { name: "Jul", users: 349, pro: 430 },
 ];
 
-export function GrowthChart() {
+export function GrowthChart({ data }: { data: any[] }) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -54,12 +54,7 @@ export function GrowthChart() {
                     stroke="#3b82f6"
                     strokeWidth={2}
                     activeDot={{ r: 8 }}
-                />
-                <Line
-                    type="monotone"
-                    dataKey="pro"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
+                    name="Usuários"
                 />
             </LineChart>
         </ResponsiveContainer>

@@ -265,522 +265,524 @@ export default function FinancePage() {
     const handleSaveTransaction = async (transactionData: any) => {
         if (!userId) return;
         try {
-            if (editingTransaction) {
-                // Editing (Singular for now, unless we implement complex "edit all" later)
-                const updated = await SupabaseFinance.updateFinanceTransaction(editingTransaction.id, {
-                    ...transactionData,
-                    user_id: userId
-                });
-                setTransactions(transactions.map(t => t.id === editingTransaction.id ? updated : t));
-            } else {
-                // Creation
-                const { recurrence, ...baseTransaction } = transactionData;
-                const newTransactions = [];
+            // Editing (Singular for now, unless we implement complex "edit all" later)
+            // Filter out non-DB fields like 'recurrence' which causes 400 error
+            const { recurrence, ...updateData } = transactionData;
 
-                if (recurrence) {
-                    // Generate multiple transactions
-                    const count = recurrence.type === 'indefinite' ? 12 : recurrence.installments;
-                    const startDate = new Date(baseTransaction.date);
+            const updated = await SupabaseFinance.updateFinanceTransaction(editingTransaction.id, {
+                ...updateData,
+                user_id: userId
+            });
+            setTransactions(transactions.map(t => t.id === editingTransaction.id ? updated : t));
+        } else {
+            // Creation
+            const { recurrence, ...baseTransaction } = transactionData;
+            const newTransactions = [];
 
-                    for (let i = 0; i < count; i++) {
-                        let nextDate = new Date(startDate);
+            if (recurrence) {
+                // Generate multiple transactions
+                const count = recurrence.type === 'indefinite' ? 12 : recurrence.installments;
+                const startDate = new Date(baseTransaction.date);
 
-                        // Calculate Date
-                        if (recurrence.frequency === 'monthly') {
-                            nextDate = addMonths(startDate, i);
-                        } else if (recurrence.frequency === 'weekly') {
-                            nextDate.setDate(startDate.getDate() + (i * 7));
-                        } else if (recurrence.frequency === 'daily') {
-                            nextDate.setDate(startDate.getDate() + i);
-                        }
+                for (let i = 0; i < count; i++) {
+                    let nextDate = new Date(startDate);
 
-                        // Status Logic:
-                        // First one (i=0) takes the user's choice (baseTransaction.confirmed).
-                        // Future ones are forced to be PENDING (confirmed: false), as they are future bills/income.
-                        const isFirst = i === 0;
-                        const status = isFirst ? baseTransaction.confirmed : false;
-
-                        newTransactions.push({
-                            ...baseTransaction,
-                            description: recurrence.type === 'fixed' ? `${baseTransaction.description} (${i + 1}/${count})` : baseTransaction.description,
-                            date: nextDate.toISOString(), // Keep time
-                            confirmed: status,
-                            user_id: userId
-                        });
+                    // Calculate Date
+                    if (recurrence.frequency === 'monthly') {
+                        nextDate = addMonths(startDate, i);
+                    } else if (recurrence.frequency === 'weekly') {
+                        nextDate.setDate(startDate.getDate() + (i * 7));
+                    } else if (recurrence.frequency === 'daily') {
+                        nextDate.setDate(startDate.getDate() + i);
                     }
 
-                    // Save all
-                    await Promise.all(newTransactions.map(t => SupabaseFinance.createFinanceTransaction(t)));
+                    // Status Logic:
+                    // First one (i=0) takes the user's choice (baseTransaction.confirmed).
+                    // Future ones are forced to be PENDING (confirmed: false), as they are future bills/income.
+                    const isFirst = i === 0;
+                    const status = isFirst ? baseTransaction.confirmed : false;
 
-                    // Optimistic update (adding all might clutter, maybe just fetch fresh)
-                    const updatedTransactions = await SupabaseFinance.getFinanceTransactions(userId);
-                    setTransactions(updatedTransactions);
-                    awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Série de Transações");
-
-                } else {
-                    // Single Transaction
-                    const created = await SupabaseFinance.createFinanceTransaction({
+                    newTransactions.push({
                         ...baseTransaction,
+                        description: recurrence.type === 'fixed' ? `${baseTransaction.description} (${i + 1}/${count})` : baseTransaction.description,
+                        date: nextDate.toISOString(), // Keep time
+                        confirmed: status,
                         user_id: userId
                     });
-                    setTransactions([created, ...transactions]);
-                    awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Movimentação Financeira");
                 }
-            }
 
-            // Refresh accounts to reflect balance changes
-            const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
-            setAccounts(updatedAccounts);
-        } catch (error) {
-            console.error('Error saving transaction:', error);
-        }
-        setEditingTransaction(null);
-    };
+                // Save all
+                await Promise.all(newTransactions.map(t => SupabaseFinance.createFinanceTransaction(t)));
 
-    const handleDeleteTransaction = async (id: string) => {
-        if (!userId) return;
-        if (!confirm("Excluir esta transação?")) return;
-        try {
-            await SupabaseFinance.deleteFinanceTransaction(id);
-            setTransactions(transactions.filter(t => t.id !== id));
+                // Optimistic update (adding all might clutter, maybe just fetch fresh)
+                const updatedTransactions = await SupabaseFinance.getFinanceTransactions(userId);
+                setTransactions(updatedTransactions);
+                awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Série de Transações");
 
-            // Refresh accounts
-            const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
-            setAccounts(updatedAccounts);
-        } catch (error) {
-            console.error('Error deleting transaction:', error);
-        }
-    };
-
-    const handleConfirmTransaction = async (id: string) => {
-        if (!userId) return;
-        try {
-            const updated = await SupabaseFinance.confirmTransaction(id);
-            setTransactions(transactions.map(t => t.id === id ? updated : t));
-
-            // Refresh accounts
-            const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
-            setAccounts(updatedAccounts);
-        } catch (error) {
-            console.error('Error confirming transaction:', error);
-            console.error('Error confirming transaction:', error);
-        }
-    };
-
-    const handleTransfer = async (data: any) => {
-        if (!userId) return;
-        try {
-            await SupabaseFinance.transferFunds(
-                userId,
-                data.fromAccountId,
-                data.toAccountId,
-                data.amount,
-                data.date,
-                data.description
-            );
-
-            // Refresh data
-            setIsLoading(true);
-            const [accountsData, transactionsData] = await Promise.all([
-                SupabaseFinance.getFinanceAccounts(userId),
-                SupabaseFinance.getFinanceTransactions(userId)
-            ]);
-            setAccounts(accountsData);
-            setTransactions(transactionsData);
-            setIsLoading(false);
-
-            alert("Transferência realizada com sucesso!");
-        } catch (error) {
-            console.error('Error processing transfer:', error);
-            alert("Erro ao realizar transferência.");
-        }
-    };
-
-    // Credit Card Handlers
-    const handleSaveCreditCard = async (cardData: any) => {
-        if (!userId) return;
-        try {
-            if (editingCreditCard) {
-                const updated = await SupabaseFinance.updateCreditCard(editingCreditCard.id, cardData);
-                setCreditCards(creditCards.map(c => c.id === editingCreditCard.id ? updated : c));
             } else {
-                const newCard = await SupabaseFinance.createCreditCard({ ...cardData, user_id: userId });
-                setCreditCards([...creditCards, newCard]);
+                // Single Transaction
+                const created = await SupabaseFinance.createFinanceTransaction({
+                    ...baseTransaction,
+                    user_id: userId
+                });
+                setTransactions([created, ...transactions]);
+                awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Nova Movimentação Financeira");
             }
-            setEditingCreditCard(null);
-            setIsCreditCardModalOpen(false);
-        } catch (error) {
-            console.error('Error saving credit card:', error);
-            alert('Erro ao salvar cartão de crédito.');
         }
-    };
 
-    const handleDeleteCreditCard = async (cardId: string) => {
-        if (!confirm("Excluir este cartão de crédito? As transações não serão afetadas.")) return;
-        try {
-            await SupabaseFinance.deleteCreditCard(cardId);
-            setCreditCards(creditCards.filter(c => c.id !== cardId));
-        } catch (error) {
-            console.error('Error deleting credit card:', error);
+        // Refresh accounts to reflect balance changes
+        const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
+        setAccounts(updatedAccounts);
+    } catch (error) {
+        console.error('Error saving transaction:', error);
+    }
+    setEditingTransaction(null);
+};
+
+const handleDeleteTransaction = async (id: string) => {
+    if (!userId) return;
+    if (!confirm("Excluir esta transação?")) return;
+    try {
+        await SupabaseFinance.deleteFinanceTransaction(id);
+        setTransactions(transactions.filter(t => t.id !== id));
+
+        // Refresh accounts
+        const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
+        setAccounts(updatedAccounts);
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+    }
+};
+
+const handleConfirmTransaction = async (id: string) => {
+    if (!userId) return;
+    try {
+        const updated = await SupabaseFinance.confirmTransaction(id);
+        setTransactions(transactions.map(t => t.id === id ? updated : t));
+
+        // Refresh accounts
+        const updatedAccounts = await SupabaseFinance.getFinanceAccounts(userId);
+        setAccounts(updatedAccounts);
+    } catch (error) {
+        console.error('Error confirming transaction:', error);
+        console.error('Error confirming transaction:', error);
+    }
+};
+
+const handleTransfer = async (data: any) => {
+    if (!userId) return;
+    try {
+        await SupabaseFinance.transferFunds(
+            userId,
+            data.fromAccountId,
+            data.toAccountId,
+            data.amount,
+            data.date,
+            data.description
+        );
+
+        // Refresh data
+        setIsLoading(true);
+        const [accountsData, transactionsData] = await Promise.all([
+            SupabaseFinance.getFinanceAccounts(userId),
+            SupabaseFinance.getFinanceTransactions(userId)
+        ]);
+        setAccounts(accountsData);
+        setTransactions(transactionsData);
+        setIsLoading(false);
+
+        alert("Transferência realizada com sucesso!");
+    } catch (error) {
+        console.error('Error processing transfer:', error);
+        alert("Erro ao realizar transferência.");
+    }
+};
+
+// Credit Card Handlers
+const handleSaveCreditCard = async (cardData: any) => {
+    if (!userId) return;
+    try {
+        if (editingCreditCard) {
+            const updated = await SupabaseFinance.updateCreditCard(editingCreditCard.id, cardData);
+            setCreditCards(creditCards.map(c => c.id === editingCreditCard.id ? updated : c));
+        } else {
+            const newCard = await SupabaseFinance.createCreditCard({ ...cardData, user_id: userId });
+            setCreditCards([...creditCards, newCard]);
         }
-    };
+        setEditingCreditCard(null);
+        setIsCreditCardModalOpen(false);
+    } catch (error) {
+        console.error('Error saving credit card:', error);
+        alert('Erro ao salvar cartão de crédito.');
+    }
+};
 
-    const handleViewInvoice = async (cardId: string) => {
-        if (!userId) return;
-        const card = creditCards.find(c => c.id === cardId);
-        if (!card) return;
+const handleDeleteCreditCard = async (cardId: string) => {
+    if (!confirm("Excluir este cartão de crédito? As transações não serão afetadas.")) return;
+    try {
+        await SupabaseFinance.deleteCreditCard(cardId);
+        setCreditCards(creditCards.filter(c => c.id !== cardId));
+    } catch (error) {
+        console.error('Error deleting credit card:', error);
+    }
+};
 
-        try {
-            // getCurrentInvoice creates the invoice if it doesn't exist
-            const invoice = await SupabaseFinance.getCurrentInvoice(cardId, userId);
-            if (invoice) {
-                setSelectedCardForInvoice(card);
-                setSelectedInvoice(invoice);
-                setIsInvoiceModalOpen(true);
-            }
-        } catch (error) {
-            console.error('Error loading invoice:', error);
+const handleViewInvoice = async (cardId: string) => {
+    if (!userId) return;
+    const card = creditCards.find(c => c.id === cardId);
+    if (!card) return;
+
+    try {
+        // getCurrentInvoice creates the invoice if it doesn't exist
+        const invoice = await SupabaseFinance.getCurrentInvoice(cardId, userId);
+        if (invoice) {
+            setSelectedCardForInvoice(card);
+            setSelectedInvoice(invoice);
+            setIsInvoiceModalOpen(true);
         }
-    };
+    } catch (error) {
+        console.error('Error loading invoice:', error);
+    }
+};
 
-    const handlePayInvoice = async (invoiceId: string, accountId: string, amount: number) => {
-        if (!userId) return;
-        try {
-            await SupabaseFinance.payInvoice(invoiceId, accountId, amount, userId);
+const handlePayInvoice = async (invoiceId: string, accountId: string, amount: number) => {
+    if (!userId) return;
+    try {
+        await SupabaseFinance.payInvoice(invoiceId, accountId, amount, userId);
 
-            // Refresh data
-            const [accountsData, cardsData] = await Promise.all([
-                SupabaseFinance.getFinanceAccounts(userId),
-                SupabaseFinance.getCreditCards(userId)
-            ]);
-            setAccounts(accountsData);
-            setCreditCards(cardsData);
+        // Refresh data
+        const [accountsData, cardsData] = await Promise.all([
+            SupabaseFinance.getFinanceAccounts(userId),
+            SupabaseFinance.getCreditCards(userId)
+        ]);
+        setAccounts(accountsData);
+        setCreditCards(cardsData);
 
-            // Reload invoices
-            const invoicesPromises = cardsData.map(card =>
-                SupabaseFinance.getCurrentInvoice(card.id, userId)
-            );
-            const invoicesResults = await Promise.all(invoicesPromises);
-            setInvoices(invoicesResults.filter(Boolean));
+        // Reload invoices
+        const invoicesPromises = cardsData.map(card =>
+            SupabaseFinance.getCurrentInvoice(card.id, userId)
+        );
+        const invoicesResults = await Promise.all(invoicesPromises);
+        setInvoices(invoicesResults.filter(Boolean));
 
-            alert('Pagamento de fatura realizado com sucesso!');
-        } catch (error) {
-            console.error('Error paying invoice:', error);
-            alert('Erro ao pagar fatura.');
-        }
-    };
+        alert('Pagamento de fatura realizado com sucesso!');
+    } catch (error) {
+        console.error('Error paying invoice:', error);
+        alert('Erro ao pagar fatura.');
+    }
+};
 
-    const handleSaveCreditCardTransaction = async (txData: any) => {
-        if (!userId) return;
-        try {
-            await SupabaseFinance.createCreditCardTransaction({
-                user_id: userId,
-                credit_card_id: txData.credit_card_id,
-                description: txData.description,
-                amount: txData.amount,
-                category: txData.category,
-                date: txData.date,
-                installments: txData.installments
-            });
+const handleSaveCreditCardTransaction = async (txData: any) => {
+    if (!userId) return;
+    try {
+        await SupabaseFinance.createCreditCardTransaction({
+            user_id: userId,
+            credit_card_id: txData.credit_card_id,
+            description: txData.description,
+            amount: txData.amount,
+            category: txData.category,
+            date: txData.date,
+            installments: txData.installments
+        });
 
-            // Refresh credit cards and invoices
-            const cardsData = await SupabaseFinance.getCreditCards(userId);
-            setCreditCards(cardsData);
+        // Refresh credit cards and invoices
+        const cardsData = await SupabaseFinance.getCreditCards(userId);
+        setCreditCards(cardsData);
 
-            const invoicesPromises = cardsData.map(card =>
-                SupabaseFinance.getCurrentInvoice(card.id, userId)
-            );
-            const invoicesResults = await Promise.all(invoicesPromises);
-            setInvoices(invoicesResults.filter(Boolean));
+        const invoicesPromises = cardsData.map(card =>
+            SupabaseFinance.getCurrentInvoice(card.id, userId)
+        );
+        const invoicesResults = await Promise.all(invoicesPromises);
+        setInvoices(invoicesResults.filter(Boolean));
 
-            // Also refresh transactions to show new credit transactions
-            const txData2 = await SupabaseFinance.getFinanceTransactions(userId);
-            setTransactions(txData2);
+        // Also refresh transactions to show new credit transactions
+        const txData2 = await SupabaseFinance.getFinanceTransactions(userId);
+        setTransactions(txData2);
 
-            awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Compra no Cartão de Crédito");
-        } catch (error) {
-            console.error('Error saving credit card transaction:', error);
-            alert('Erro ao salvar transação no cartão.');
-        }
-    };
+        awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Compra no Cartão de Crédito");
+    } catch (error) {
+        console.error('Error saving credit card transaction:', error);
+        alert('Erro ao salvar transação no cartão.');
+    }
+};
 
-    return (
-        <div className="h-full overflow-y-auto custom-scrollbar">
-            {/* Banner */}
-            < PageBanner
-                title="Financeiro"
-                subtitle="Gerencie seu patrimônio e fluxo de caixa."
-                gradientColor="emerald"
-                icon={Wallet}
-            />
+return (
+    <div className="h-full overflow-y-auto custom-scrollbar">
+        {/* Banner */}
+        < PageBanner
+            title="Financeiro"
+            subtitle="Gerencie seu patrimônio e fluxo de caixa."
+            gradientColor="emerald"
+            icon={Wallet}
+        />
 
-            <div className="p-8 pb-32 max-w-7xl mx-auto space-y-8">
-                {/* Header Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Visão Geral</h2>
-                        <p className="text-sm text-zinc-400">Acompanhe suas finanças em tempo real.</p>
-                    </div>
+        <div className="p-8 pb-32 max-w-7xl mx-auto space-y-8">
+            {/* Header Actions */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Visão Geral</h2>
+                    <p className="text-sm text-zinc-400">Acompanhe suas finanças em tempo real.</p>
+                </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => setIsCategoryManagerOpen(true)}
-                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
-                        >
-                            <Tag size={16} />
-                            Categorias
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsCategoryManagerOpen(true)}
+                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                    >
+                        <Tag size={16} />
+                        Categorias
+                    </button>
+                    <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-lg border border-white/5">
+                        <button onClick={prevMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
+                            <ChevronLeft size={16} />
                         </button>
-                        <div className="flex items-center gap-2 bg-zinc-900/50 p-1 rounded-lg border border-white/5">
-                            <button onClick={prevMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
-                                <ChevronLeft size={16} />
-                            </button>
-                            <span className="text-sm font-bold text-white min-w-[120px] text-center capitalize">
-                                {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
-                            </span>
-                            <button onClick={nextMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
-                                <ChevronRight size={16} />
-                            </button>
-                        </div>
+                        <span className="text-sm font-bold text-white min-w-[120px] text-center capitalize">
+                            {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+                        </span>
+                        <button onClick={nextMonth} className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors">
+                            <ChevronRight size={16} />
+                        </button>
                     </div>
                 </div>
-
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Saldo Total</span>
-                        </div>
-                        <p className="text-2xl font-bold text-white">{totalBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                    </div>
-                    <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><TrendingUp size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Entradas (Mês)</span>
-                        </div>
-                        <p className="text-2xl font-bold text-white">{stats.confirmedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                        {stats.pendingIncome > 0 && (
-                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
-                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                                <p className="text-xs text-zinc-400">
-                                    <span className="text-amber-500 font-bold">{stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> pendente
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                    <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={20} /></div>
-                            <span className="text-zinc-400 text-sm">Saídas (Mês)</span>
-                        </div>
-                        <p className="text-2xl font-bold text-white">{stats.confirmedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                        {stats.pendingExpense > 0 && (
-                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
-                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                                <p className="text-xs text-zinc-400">
-                                    <span className="text-amber-500 font-bold">{stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> pendente
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Charts Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                    {/* Cash Flow Chart - Daily */}
-                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-white">Fluxo Diário</h3>
-                            <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded-md border border-white/5">Este Mês</span>
-                        </div>
-                        <FinanceChart data={chartData} />
-                    </section>
-
-                    {/* Expenses Chart */}
-                    <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
-                        <h3 className="text-lg font-bold text-white mb-6">Por Categoria</h3>
-                        <div className="h-[300px] w-full">
-                            <ExpensePieChart data={expenseCategoryData} />
-                        </div>
-                    </section>
-                </div>
-
-                {/* NEW: Monthly History (Full Width) */}
-                <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-white">Histórico Semestral</h3>
-                        <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded-md border border-white/5">Últimos 6 meses</span>
-                    </div>
-                    <MonthlyHistoryChart transactions={transactions} />
-                </section>
-
-                {/* Main Grid: Accounts & Transactions */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Accounts Column */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-white">Minhas Contas</h3>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setIsTransferModalOpen(true)}
-                                    className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg transition-colors"
-                                    title="Transferir entre contas"
-                                >
-                                    <ArrowRightLeft size={20} />
-                                </button>
-                                <button
-                                    onClick={() => { setEditingAccount(null); setIsAccountModalOpen(true); }}
-                                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
-                                    title="Nova conta"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="space-y-3">
-                            {accounts.map(account => (
-                                <AccountCard
-                                    key={account.id}
-                                    {...account}
-                                    onEdit={(id) => {
-                                        setEditingAccount(accounts.find(a => a.id === id));
-                                        setIsAccountModalOpen(true);
-                                    }}
-                                    onDelete={handleDeleteAccount}
-                                />
-                            ))}
-                        </div>
-
-                        {/* Credit Cards Section - inside accounts column */}
-                        <div className="mt-6 pt-6 border-t border-white/5">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                    <CreditCard size={18} className="text-indigo-400" />
-                                    Cartões de Crédito
-                                </h3>
-                                <button
-                                    onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
-                                    className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
-                                    title="Novo cartão"
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                            {creditCards.length > 0 ? (
-                                <div className="space-y-3">
-                                    {creditCards.map(card => {
-                                        const cardInvoice = invoices.find(inv => inv.credit_card_id === card.id);
-                                        return (
-                                            <CreditCardCard
-                                                key={card.id}
-                                                {...card}
-                                                currentInvoiceAmount={cardInvoice?.total_amount || 0}
-                                                nextDueDate={cardInvoice?.due_date}
-                                                onEdit={(id) => {
-                                                    setEditingCreditCard(creditCards.find(c => c.id === id));
-                                                    setIsCreditCardModalOpen(true);
-                                                }}
-                                                onDelete={handleDeleteCreditCard}
-                                                onViewInvoice={handleViewInvoice}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
-                                    className="w-full p-4 border-2 border-dashed border-white/10 rounded-xl text-zinc-500 hover:text-white hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2 text-sm"
-                                >
-                                    <CreditCard size={18} />
-                                    Adicionar Cartão
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Transactions Column */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-white">Transações Recentes</h3>
-                            <button
-                                onClick={() => { setEditingTransaction(null); setIsTransactionModalOpen(true); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-zinc-200 transition-colors"
-                            >
-                                <Plus size={18} />
-                                Nova Transação
-                            </button>
-                        </div>
-                        <div className="bg-zinc-900/20 border border-white/5 rounded-3xl p-4 min-h-[400px]">
-                            <TransactionList
-                                // @ts-ignore
-                                transactions={filteredTransactions}
-                                categories={categories}
-                                onEdit={(id) => {
-                                    setEditingTransaction(transactions.find(t => t.id === id));
-                                    setIsTransactionModalOpen(true);
-                                }}
-                                onDelete={handleDeleteTransaction}
-                                onConfirm={handleConfirmTransaction}
-                            />
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
-            {/* Modals */}
-            <AccountModal
-                isOpen={isAccountModalOpen}
-                onClose={() => setIsAccountModalOpen(false)}
-                onSave={handleSaveAccount}
-                initialData={editingAccount}
-            />
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
+                        <span className="text-zinc-400 text-sm">Saldo Total</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{totalBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                </div>
+                <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><TrendingUp size={20} /></div>
+                        <span className="text-zinc-400 text-sm">Entradas (Mês)</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.confirmedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    {stats.pendingIncome > 0 && (
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            <p className="text-xs text-zinc-400">
+                                <span className="text-amber-500 font-bold">{stats.pendingIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> pendente
+                            </p>
+                        </div>
+                    )}
+                </div>
+                <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><TrendingDown size={20} /></div>
+                        <span className="text-zinc-400 text-sm">Saídas (Mês)</span>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.confirmedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    {stats.pendingExpense > 0 && (
+                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            <p className="text-xs text-zinc-400">
+                                <span className="text-amber-500 font-bold">{stats.pendingExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span> pendente
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
 
-            <TransactionModal
-                isOpen={isTransactionModalOpen}
-                onClose={() => {
-                    setIsTransactionModalOpen(false);
-                    setEditingTransaction(null);
-                }}
-                onSave={handleSaveTransaction}
-                onSaveCreditCard={handleSaveCreditCardTransaction}
-                accounts={accounts}
-                creditCards={creditCards}
-                categories={categories}
-                initialData={editingTransaction}
-            />
+            {/* Charts Area */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+                {/* Cash Flow Chart - Daily */}
+                <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-white">Fluxo Diário</h3>
+                        <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded-md border border-white/5">Este Mês</span>
+                    </div>
+                    <FinanceChart data={chartData} />
+                </section>
 
-            <CategoryManager
-                isOpen={isCategoryManagerOpen}
-                onClose={() => setIsCategoryManagerOpen(false)}
-                categories={categories}
-                onSave={handleSaveCategories}
-            />
+                {/* Expenses Chart */}
+                <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
+                    <h3 className="text-lg font-bold text-white mb-6">Por Categoria</h3>
+                    <div className="h-[300px] w-full">
+                        <ExpensePieChart data={expenseCategoryData} />
+                    </div>
+                </section>
+            </div>
 
-            <TransferModal
-                isOpen={isTransferModalOpen}
-                onClose={() => setIsTransferModalOpen(false)}
-                onTransfer={handleTransfer}
-                accounts={accounts}
-            />
+            {/* NEW: Monthly History (Full Width) */}
+            <section className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl w-full">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold text-white">Histórico Semestral</h3>
+                    <span className="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded-md border border-white/5">Últimos 6 meses</span>
+                </div>
+                <MonthlyHistoryChart transactions={transactions} />
+            </section>
 
-            <CreditCardModal
-                isOpen={isCreditCardModalOpen}
-                onClose={() => { setIsCreditCardModalOpen(false); setEditingCreditCard(null); }}
-                onSave={handleSaveCreditCard}
-                accounts={accounts}
-                initialData={editingCreditCard}
-            />
+            {/* Main Grid: Accounts & Transactions */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Accounts Column */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-white">Minhas Contas</h3>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setIsTransferModalOpen(true)}
+                                className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg transition-colors"
+                                title="Transferir entre contas"
+                            >
+                                <ArrowRightLeft size={20} />
+                            </button>
+                            <button
+                                onClick={() => { setEditingAccount(null); setIsAccountModalOpen(true); }}
+                                className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                                title="Nova conta"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        {accounts.map(account => (
+                            <AccountCard
+                                key={account.id}
+                                {...account}
+                                onEdit={(id) => {
+                                    setEditingAccount(accounts.find(a => a.id === id));
+                                    setIsAccountModalOpen(true);
+                                }}
+                                onDelete={handleDeleteAccount}
+                            />
+                        ))}
+                    </div>
 
-            <InvoiceModal
-                isOpen={isInvoiceModalOpen}
-                onClose={() => { setIsInvoiceModalOpen(false); setSelectedInvoice(null); setSelectedCardForInvoice(null); }}
-                onPay={handlePayInvoice}
-                invoice={selectedInvoice}
-                card={selectedCardForInvoice}
-                accounts={accounts}
-                transactions={transactions.filter(t => t.invoice_id === selectedInvoice?.id)}
-            />
+                    {/* Credit Cards Section - inside accounts column */}
+                    <div className="mt-6 pt-6 border-t border-white/5">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <CreditCard size={18} className="text-indigo-400" />
+                                Cartões de Crédito
+                            </h3>
+                            <button
+                                onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
+                                className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                                title="Novo cartão"
+                            >
+                                <Plus size={16} />
+                            </button>
+                        </div>
+                        {creditCards.length > 0 ? (
+                            <div className="space-y-3">
+                                {creditCards.map(card => {
+                                    const cardInvoice = invoices.find(inv => inv.credit_card_id === card.id);
+                                    return (
+                                        <CreditCardCard
+                                            key={card.id}
+                                            {...card}
+                                            currentInvoiceAmount={cardInvoice?.total_amount || 0}
+                                            nextDueDate={cardInvoice?.due_date}
+                                            onEdit={(id) => {
+                                                setEditingCreditCard(creditCards.find(c => c.id === id));
+                                                setIsCreditCardModalOpen(true);
+                                            }}
+                                            onDelete={handleDeleteCreditCard}
+                                            onViewInvoice={handleViewInvoice}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
+                                className="w-full p-4 border-2 border-dashed border-white/10 rounded-xl text-zinc-500 hover:text-white hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2 text-sm"
+                            >
+                                <CreditCard size={18} />
+                                Adicionar Cartão
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Transactions Column */}
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-white">Transações Recentes</h3>
+                        <button
+                            onClick={() => { setEditingTransaction(null); setIsTransactionModalOpen(true); }}
+                            className="flex items-center gap-2 px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-zinc-200 transition-colors"
+                        >
+                            <Plus size={18} />
+                            Nova Transação
+                        </button>
+                    </div>
+                    <div className="bg-zinc-900/20 border border-white/5 rounded-3xl p-4 min-h-[400px]">
+                        <TransactionList
+                            // @ts-ignore
+                            transactions={filteredTransactions}
+                            categories={categories}
+                            onEdit={(id) => {
+                                setEditingTransaction(transactions.find(t => t.id === id));
+                                setIsTransactionModalOpen(true);
+                            }}
+                            onDelete={handleDeleteTransaction}
+                            onConfirm={handleConfirmTransaction}
+                        />
+                    </div>
+                </div>
+            </div>
+
         </div>
-    );
+
+        {/* Modals */}
+        <AccountModal
+            isOpen={isAccountModalOpen}
+            onClose={() => setIsAccountModalOpen(false)}
+            onSave={handleSaveAccount}
+            initialData={editingAccount}
+        />
+
+        <TransactionModal
+            isOpen={isTransactionModalOpen}
+            onClose={() => {
+                setIsTransactionModalOpen(false);
+                setEditingTransaction(null);
+            }}
+            onSave={handleSaveTransaction}
+            onSaveCreditCard={handleSaveCreditCardTransaction}
+            accounts={accounts}
+            creditCards={creditCards}
+            categories={categories}
+            initialData={editingTransaction}
+        />
+
+        <CategoryManager
+            isOpen={isCategoryManagerOpen}
+            onClose={() => setIsCategoryManagerOpen(false)}
+            categories={categories}
+            onSave={handleSaveCategories}
+        />
+
+        <TransferModal
+            isOpen={isTransferModalOpen}
+            onClose={() => setIsTransferModalOpen(false)}
+            onTransfer={handleTransfer}
+            accounts={accounts}
+        />
+
+        <CreditCardModal
+            isOpen={isCreditCardModalOpen}
+            onClose={() => { setIsCreditCardModalOpen(false); setEditingCreditCard(null); }}
+            onSave={handleSaveCreditCard}
+            accounts={accounts}
+            initialData={editingCreditCard}
+        />
+
+        <InvoiceModal
+            isOpen={isInvoiceModalOpen}
+            onClose={() => { setIsInvoiceModalOpen(false); setSelectedInvoice(null); setSelectedCardForInvoice(null); }}
+            onPay={handlePayInvoice}
+            invoice={selectedInvoice}
+            card={selectedCardForInvoice}
+            accounts={accounts}
+            transactions={transactions.filter(t => t.invoice_id === selectedInvoice?.id)}
+        />
+    </div>
+);
 }
