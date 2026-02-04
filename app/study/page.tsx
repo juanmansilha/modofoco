@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, BookOpen, LayoutGrid, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Plus, BookOpen, LayoutGrid, Calendar as CalendarIcon, Clock, CheckCircle2 } from "lucide-react";
 import { SubjectCard } from "@/components/study/SubjectCard";
 import { SubjectModal } from "@/components/study/SubjectModal";
 import { FocusTimer } from "@/components/study/FocusTimer";
@@ -90,6 +90,7 @@ export default function StudyPage() {
                 </div>
 
                 {/* Stats */}
+                {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-zinc-900/50 border border-white/5 p-4 rounded-2xl flex items-center gap-4">
                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
@@ -97,7 +98,31 @@ export default function StudyPage() {
                         </div>
                         <div>
                             <p className="text-zinc-400 text-xs uppercase font-bold tracking-wider">Total Estudado</p>
-                            <p className="text-2xl font-bold text-white">{totalHours.toFixed(1)}h</p>
+                            <p className="text-2xl font-bold text-white">{(totalHours || 0).toFixed(1)}h</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-zinc-900/50 border border-white/5 p-4 rounded-2xl flex items-center gap-4">
+                        <div className="p-3 bg-amber-500/10 rounded-xl text-amber-400">
+                            <BookOpen size={24} />
+                        </div>
+                        <div>
+                            <p className="text-zinc-400 text-xs uppercase font-bold tracking-wider">Em Andamento</p>
+                            <p className="text-2xl font-bold text-white">
+                                {subjects.filter(s => s.progress < 100).length}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="bg-zinc-900/50 border border-white/5 p-4 rounded-2xl flex items-center gap-4">
+                        <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
+                            <CheckCircle2 size={24} />
+                        </div>
+                        <div>
+                            <p className="text-zinc-400 text-xs uppercase font-bold tracking-wider">Concluídos</p>
+                            <p className="text-2xl font-bold text-white">
+                                {subjects.filter(s => s.progress === 100).length}
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -171,8 +171,8 @@ export async function getStudySubjects(userId: string) {
 
     return (data || []).map(subject => ({
         ...subject,
-        dueDate: subject.due_date,
-        totalHours: subject.total_hours,
+        dueDate: subject.due_date, // Keep as is, format in UI
+        totalHours: Number(subject.total_hours) || 0, // Ensure number
         lastStudied: subject.last_studied
     }));
 }

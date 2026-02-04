@@ -32,7 +32,9 @@ export function SubjectModal({ isOpen, onClose, onSave, initialData }: SubjectMo
                 setCategory(initialData.category);
                 setProgress(initialData.progress);
                 setTasks(initialData.tasks || []);
-                setDueDate(initialData.dueDate || "");
+                // Ensure date is YYYY-MM-DD for input
+                const dateStr = initialData.dueDate ? new Date(initialData.dueDate).toISOString().split('T')[0] : "";
+                setDueDate(dateStr);
             } else {
                 setTitle("");
                 setCategory("course");
