@@ -817,9 +817,9 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             }
         };
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session) {
-                loadProfile(session.user.id);
+                await loadProfile(session.user.id);
             }
             setIsAuthLoading(false);
         });
