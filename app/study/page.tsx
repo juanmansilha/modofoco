@@ -25,15 +25,20 @@ export default function StudyPage() {
 
     const totalHours = subjects.reduce((acc, sub) => acc + sub.totalHours, 0);
 
-    const handleSave = (subjectData: any) => {
-        if (editingSubject) {
-            updateSubject({ ...subjectData, id: editingSubject.id });
-        } else {
-            // Let the backend generate the ID
-            addSubject(subjectData);
+    const handleSave = async (subjectData: any) => {
+        try {
+            if (editingSubject) {
+                await updateSubject({ ...subjectData, id: editingSubject.id });
+            } else {
+                // Let the backend generate the ID
+                await addSubject(subjectData);
+            }
+            setIsModalOpen(false);
+            setEditingSubject(null);
+        } catch (error) {
+            console.error("Failed to save subject:", error);
+            alert("Erro ao salvar tópico. Tente novamente.");
         }
-        setIsModalOpen(false);
-        setEditingSubject(null);
     };
 
     const handleDelete = (id: string) => {

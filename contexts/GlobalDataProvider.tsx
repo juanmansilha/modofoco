@@ -553,12 +553,14 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
     };
 
     const addSubject = async (subject: StudySubject) => {
-        if (!userId) return;
+        if (!userId) return null;
         try {
             const created = await SupabaseProductivity.createStudySubject({ ...subject, user_id: userId, id: undefined });
             setSubjects([...subjects, created]);
+            return created;
         } catch (e) {
             console.error("Error adding subject:", e);
+            throw e;
         }
     };
 

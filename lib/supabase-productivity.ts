@@ -172,34 +172,17 @@ export async function getStudySubjects(userId: string) {
 }
 
 export async function createStudySubject(subject: any) {
-    const dbSubject = { ...subject };
-
-    // Map camelCase
-    if (dbSubject.totalHours !== undefined) {
-        dbSubject.total_hours = dbSubject.totalHours;
-        delete dbSubject.totalHours;
-    }
-    if (dbSubject.lastStudied) {
-        dbSubject.last_studied = dbSubject.lastStudied;
-        delete dbSubject.lastStudied;
-    }
-    // Handle empty date string
-    if (dbSubject.last_studied === "") dbSubject.last_studied = null;
-
-    if (dbSubject.dueDate) {
-        dbSubject.due_date = dbSubject.dueDate;
-        delete dbSubject.dueDate;
-    }
-    // Handle empty date string
-    if (dbSubject.due_date === "") dbSubject.due_date = null;
-
-    if (dbSubject.userId) {
-        dbSubject.user_id = dbSubject.userId;
-        delete dbSubject.userId;
-    }
-    if (!dbSubject.id) {
-        delete dbSubject.id;
-    }
+    // Explicit mapping to ensure no extra keys (like 'dueDate') leak to Supabase
+    const dbSubject = {
+        user_id: subject.userId || subject.user_id,
+        title: subject.title,
+        category: subject.category,
+        progress: subject.progress || 0,
+        total_hours: subject.totalHours || subject.total_hours || 0,
+        last_studied: (subject.lastStudied === "" ? null : (subject.lastStudied || subject.last_studied || null)),
+        due_date: (subject.dueDate === "" ? null : (subject.dueDate || subject.due_date || null)),
+        tasks: subject.tasks || []
+    };
 
     const { data, error } = await supabase
         .from('study_subjects')
@@ -212,28 +195,23 @@ export async function createStudySubject(subject: any) {
 }
 
 export async function updateStudySubject(id: string, updates: any) {
-    const dbUpdates = { ...updates };
+    const dbUpdates: any = {};
 
-    // Map camelCase
-    if (dbUpdates.totalHours !== undefined) {
-        dbUpdates.total_hours = dbUpdates.totalHours;
-        delete dbUpdates.totalHours;
-    }
-    if (dbUpdates.lastStudied) {
-        dbUpdates.last_studied = dbUpdates.lastStudied;
-        delete dbUpdates.lastStudied;
-    }
-    // Handle empty date string
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.progress !== undefined) dbUpdates.progress = updates.progress;
+    if (updates.tasks !== undefined) dbUpdates.tasks = updates.tasks;
+
+    if (updates.totalHours !== undefined) dbUpdates.total_hours = updates.totalHours;
+    if (updates.total_hours !== undefined) dbUpdates.total_hours = updates.total_hours;
+
+    if (updates.lastStudied !== undefined) dbUpdates.last_studied = updates.lastStudied;
+    if (updates.last_studied !== undefined) dbUpdates.last_studied = updates.last_studied;
     if (dbUpdates.last_studied === "") dbUpdates.last_studied = null;
 
-    if (dbUpdates.dueDate) {
-        dbUpdates.due_date = dbUpdates.dueDate;
-        delete dbUpdates.dueDate;
-    }
-    // Handle empty date string
+    if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
+    if (updates.due_date !== undefined) dbUpdates.due_date = updates.due_date;
     if (dbUpdates.due_date === "") dbUpdates.due_date = null;
-
-    if (dbUpdates.userId) delete dbUpdates.userId;
 
     const { data, error } = await supabase
         .from('study_subjects')
