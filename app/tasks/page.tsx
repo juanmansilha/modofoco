@@ -327,6 +327,12 @@ export default function TasksPage() {
                                                     </div>
 
                                                     <div className="flex items-start gap-3 mt-1">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleToggleTask(task); }}
+                                                            className="text-zinc-700 hover:text-emerald-500 transition-colors shrink-0 pt-0.5"
+                                                        >
+                                                            {task.column === 'done' ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Circle size={18} />}
+                                                        </button>
                                                         <div className="flex-1">
                                                             <p className={`text-sm font-medium leading-snug ${task.column === 'done' ? "text-zinc-500 line-through" : "text-zinc-200"}`}>
                                                                 {task.title}
@@ -340,12 +346,6 @@ export default function TasksPage() {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleToggleTask(task); }}
-                                                            className="text-zinc-700 hover:text-emerald-500 transition-colors shrink-0 pt-0.5"
-                                                        >
-                                                            {task.column === 'done' ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Circle size={18} />}
-                                                        </button>
                                                     </div>
                                                 </Card>
                                             </div>
