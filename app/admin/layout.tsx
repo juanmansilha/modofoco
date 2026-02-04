@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
 
 export default function AdminLayout({
     children,
