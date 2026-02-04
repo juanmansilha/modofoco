@@ -30,8 +30,15 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Listener simples de fetch para offline
+// Listener simples de fetch para offline (Excluindo APIs e Auth)
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+
+    // Não cachear chamadas ao Supabase ou APIs
+    if (url.hostname.includes('supabase.co') || url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request).then((response) => {
             return response || fetch(event.request);
