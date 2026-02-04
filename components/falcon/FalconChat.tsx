@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { FalconBrain } from "@/lib/falcon-brain";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
 import { useGamification } from "@/contexts/GamificationContext";
+import { supabase } from "@/lib/supabase"; // Import Supabase
 import { X, Send, Sparkles, MessageCircle, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ interface Message {
 }
 
 export function FalconChat({ isOpen, onClose }: FalconChatProps) {
-    const { user, userData } = useGlobalData(); // We need user.id
+    const { userData } = useGlobalData(); // user removed
     const { awardFP } = useGamification();
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -42,10 +43,14 @@ export function FalconChat({ isOpen, onClose }: FalconChatProps) {
 
     // Init Brain
     useEffect(() => {
-        if (user?.id) {
-            setBrain(new FalconBrain(user.id));
-        }
-    }, [user]);
+        const initBrain = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setBrain(new FalconBrain(user.id));
+            }
+        };
+        initBrain();
+    }, []);
 
     // Auto scroll
     useEffect(() => {
