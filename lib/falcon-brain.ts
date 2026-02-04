@@ -401,13 +401,52 @@ export class FalconBrain {
         return { text: "Notificação enviada." };
     }
 
+    private async sendWhatsAppMessage(message: string): Promise<void> {
+        // 1. Get user phone
+        const { data: profile } = await this.supabase
+            .from('profiles')
+            .select('whatsapp')
+            .eq('id', this.userId)
+            .single();
+
+        if (!profile || !profile.whatsapp) {
+            console.error("Falcon: No phone found for user", this.userId);
+            return;
+        }
+
+        const phone = profile.whatsapp;
+        const instanceName = process.env.EVO_INSTANCE_NAME;
+        const apiKey = process.env.EVO_API_KEY;
+        const apiUrl = process.env.EVO_API_URL;
+
+        if (!instanceName || !apiKey || !apiUrl) {
+            console.error("Falcon: Evolution API env vars missing");
+            return;
+        }
+
+        try {
+            await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': apiKey
+                },
+                body: JSON.stringify({
+                    number: phone,
+                    options: { delay: 1200, presence: "composing", linkPreview: false },
+                    textMessage: { text: message }
+                })
+            });
+        } catch (error) {
+            console.error("Falcon: Network error sending WhatsApp:", error);
+        }
+    }
+
     private handleUnknown(text: string): FalconResponse {
-        // Simple heuristic: if it looks like a greeting, send Onboarding
         const lower = text.toLowerCase();
         if (lower === 'oi' || lower === 'ola' || lower === 'olá' || lower === 'start' || lower === 'inicio') {
             return { text: FALCON_ONBOARDING_MESSAGE };
         }
-
         return {
             text: `🦅 Não entendi o comando.\n\nUse os modelos:\n• "Criar tarefa [nome]"\n• "Registrar treino [tipo]"\n• "Adicionar saída [valor] [descrição]"\n• "Registrar estudo [tempo]"`
         };
