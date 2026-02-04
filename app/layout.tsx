@@ -23,7 +23,6 @@ import { IntroAnimation } from "@/components/layout/IntroAnimation";
 import { GlobalDataProvider } from "@/contexts/GlobalDataProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "@/lib/clearMockData";
-import { FalconFloatingButton } from "@/components/falcon/FalconFloatingButton";
 import { GamificationProvider } from "@/contexts/GamificationContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 
@@ -45,7 +44,6 @@ export default function RootLayout({
                 <AppShell>
                   {children}
                 </AppShell>
-                <FalconFloatingButton />
               </GamificationProvider>
             </GlobalDataProvider>
           </NotificationProvider>

@@ -362,6 +362,45 @@ export class FalconBrain {
         }
     }
 
+    async notifyUpcomingBills(): Promise<FalconResponse> {
+        // 1. Fetch upcoming pending bills (expenses)
+        // We look for expenses that are NOT confirmed (pending) 
+        // OR expenses that are confirmed but date is in the future (though usually 'pending' is the key)
+        // For simplicity, let's look for: type='expense' AND confirmed=false
+
+        const { data: bills, error } = await this.supabase
+            .from('finance_transactions')
+            .select('*')
+            .eq('user_id', this.userId)
+            .eq('type', 'expense')
+            .eq('confirmed', false)
+            .order('date', { ascending: true })
+            .limit(5);
+
+        if (error) {
+            console.error("Error fetching bills:", error);
+            return { text: "Erro ao buscar contas." };
+        }
+
+        if (!bills || bills.length === 0) {
+            await this.sendWhatsAppMessage("🦅 Nenhuma conta pendente encontrada para os próximos dias. Tudo em dia! ✅");
+            return { text: "Sem contas." };
+        }
+
+        // Format message
+        let message = "🦅 *Contas Próximas (Pendentes)*\n\n";
+        bills.forEach(bill => {
+            const date = new Date(bill.date).toLocaleDateString('pt-BR');
+            const amount = bill.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            message += `• ${bill.description}: ${amount} (Vence: ${date})\n`;
+        });
+
+        message += "\nDigite *'Pagar [nome]'* para dar baixa.";
+
+        await this.sendWhatsAppMessage(message);
+        return { text: "Notificação enviada." };
+    }
+
     private handleUnknown(text: string): FalconResponse {
         // Simple heuristic: if it looks like a greeting, send Onboarding
         const lower = text.toLowerCase();

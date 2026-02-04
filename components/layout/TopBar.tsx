@@ -10,7 +10,6 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import { useGamification } from "@/contexts/GamificationContext";
 import { NotificationPanel } from "@/components/ui/NotificationPanel";
 import { useGlobalData } from "@/contexts/GlobalDataProvider"; // Added import
-import { FalconIcon } from "@/components/falcon/FalconIcon"; // Added import
 
 export function TopBar() {
     const [showNotifications, setShowNotifications] = useState(false);
@@ -56,8 +55,6 @@ export function TopBar() {
                 </Link>
 
                 <div className="h-8 w-px bg-white/10" />
-
-                <FalconIcon />
 
                 {/* Notification Bell */}
                 <div className="relative">
