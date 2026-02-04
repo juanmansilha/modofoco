@@ -18,11 +18,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-import { AppShell } from "@/components/layout/AppShell";
-import { IntroAnimation } from "@/components/layout/IntroAnimation";
-import { GlobalDataProvider } from "@/contexts/GlobalDataProvider";
-import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
-import "@/lib/clearMockData"; // Clear old mock data on app load
+import { FalconFloatingButton } from "@/components/falcon/FalconFloatingButton";
+
+// ... existing imports
 
 export default function RootLayout({
   children,
@@ -40,6 +38,7 @@ export default function RootLayout({
             <AppShell>
               {children}
             </AppShell>
+            <FalconFloatingButton />
           </GlobalDataProvider>
         </IntroAnimation>
       </body>

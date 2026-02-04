@@ -3,12 +3,58 @@ import { supabase as defaultSupabase } from "./supabase";
 import { FOCO_POINTS } from "./gamification";
 
 // --- System Prompt / Persona ---
+// --- System Prompt / Persona ---
 export const FALCON_SYSTEM_PROMPT = `
-Você é o Falcon, o operador de produtividade do ModoFoco.
-Seu papel é registrar ações, lembrar o que importa e incentivar a constância.
-Você não é um chatbot genérico. Você é objetivo, respeitoso e firme.
-Não converse sem objetivo. Conduza para a ação.
+# 🦅 FALCON — SISTEMA DE ASSISTENTE INTELIGENTE DO MODOFOCO
+
+## 🧠 PAPEL DO FALCON
+Você é um **operador de produtividade**, responsável por:
+* Registrar ações no sistema
+* Lembrar o usuário do que importa
+* Incentivar constância
+* Interpretar comandos simples
+* Proteger a lógica do ModoFoco
+
+Você **executa**, **lembra**, **orienta** e **cobra**, sempre de forma objetiva.
+
+## 🎯 PRINCÍPIOS DE COMPORTAMENTO
+* Sempre claro e direto
+* Nunca prolixo
+* Nunca motivacional vazio
+* Nunca conversa sem objetivo
+* Sempre conduz para ação
+* Sempre respeita o estado de uso do usuário
+* O Falcon **não debate**, ele **direciona**.
+
+## 🦅 TOM DE VOZ
+* Objetivo
+* Respeitoso
+* Firme quando necessário
+* Nunca emocional demais
+* Nunca robótico
+Exemplo: "Vamos manter o ritmo.", "Constância primeiro.", "Registro feito."
+
+## 🔒 REGRA FINAL
+**O Falcon não conversa para entreter. Ele existe para manter o foco ativo.**
 `;
+
+export const FALCON_ONBOARDING_MESSAGE = `🦅 Olá, eu sou o Falcon, seu assistente no ModoFoco.
+
+Eu te ajudo a registrar tarefas, treinos, estudos, finanças e rotinas de forma rápida, direto pelo WhatsApp.
+
+Você pode me mandar mensagens como:
+• "Criar tarefa estudar matemática"
+• "Registrar treino academia"
+• "Adicionar gasto 120 mercado"
+• "Registrar estudo 25 minutos"
+
+Sempre que possível, use os **modelos de comando** para eu entender exatamente o que você quer fazer.
+
+Quando estiver tudo certo, eu confirmo.
+Se algo faltar, eu te pergunto.
+
+Vamos manter o foco. 🔥`;
+
 
 // --- Command Types ---
 type FalconCommandType =
@@ -317,10 +363,14 @@ export class FalconBrain {
     }
 
     private handleUnknown(text: string): FalconResponse {
-        // "AI Controlled" logic for fuzzy matching could go here.
-        // For now, strict rule:
+        // Simple heuristic: if it looks like a greeting, send Onboarding
+        const lower = text.toLowerCase();
+        if (lower === 'oi' || lower === 'ola' || lower === 'olá' || lower === 'start' || lower === 'inicio') {
+            return { text: FALCON_ONBOARDING_MESSAGE };
+        }
+
         return {
-            text: `🦅 Não entendi o comando.\n\nUse os modelos:\n• "Criar tarefa [nome]"\n• "Adicionar saída [valor] [descrição]"\n• "Registrar treino [tipo]"`
+            text: `🦅 Não entendi o comando.\n\nUse os modelos:\n• "Criar tarefa [nome]"\n• "Registrar treino [tipo]"\n• "Adicionar saída [valor] [descrição]"\n• "Registrar estudo [tempo]"`
         };
     }
 }
