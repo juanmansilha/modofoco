@@ -10,5 +10,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
     supabaseUrl || "",
-    supabaseAnonKey || ""
+    supabaseAnonKey || "fallback-key-to-prevent-crash"
 );
