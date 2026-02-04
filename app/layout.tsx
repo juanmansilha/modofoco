@@ -18,13 +18,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-import { AppShell } from "@/components/layout/AppShell";
-import { IntroAnimation } from "@/components/layout/IntroAnimation";
-import { GlobalDataProvider } from "@/contexts/GlobalDataProvider";
-import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
-import "@/lib/clearMockData";
-import { FalconFloatingButton } from "@/components/falcon/FalconFloatingButton";
-import { GamificationProvider } from "@/contexts/GamificationContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export default function RootLayout({
   children,
@@ -38,14 +32,16 @@ export default function RootLayout({
       >
         <IntroAnimation>
           <ServiceWorkerRegister />
-          <GlobalDataProvider>
-            <GamificationProvider>
-              <AppShell>
-                {children}
-              </AppShell>
-              <FalconFloatingButton />
-            </GamificationProvider>
-          </GlobalDataProvider>
+          <NotificationProvider>
+            <GlobalDataProvider>
+              <GamificationProvider>
+                <AppShell>
+                  {children}
+                </AppShell>
+                <FalconFloatingButton />
+              </GamificationProvider>
+            </GlobalDataProvider>
+          </NotificationProvider>
         </IntroAnimation>
       </body>
     </html>

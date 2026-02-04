@@ -92,10 +92,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
 
     return (
-        <NotificationProvider>
-            <GamificationProvider>
-                {content}
-            </GamificationProvider>
-        </NotificationProvider>
+        <>
+            {content}
+        </>
     );
 }
