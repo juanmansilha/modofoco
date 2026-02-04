@@ -145,6 +145,7 @@ CREATE TABLE IF NOT EXISTS public.gym_sessions (
     recurrence TEXT[],
     exercises JSONB DEFAULT '[]'::jsonb,
     completed BOOLEAN DEFAULT FALSE,
+    completed_dates TEXT[], -- Array of ISO date strings for recurring completion
     last_performed TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -188,6 +189,7 @@ CREATE TABLE IF NOT EXISTS public.meals (
     time TEXT,
     date DATE,
     recurrence TEXT[],
+    completed_dates TEXT[], -- Array of ISO date strings
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
