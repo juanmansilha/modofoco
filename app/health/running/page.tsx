@@ -179,18 +179,8 @@ export default function RunningPage() {
                         </div>
                     </Card>
 
-                    {/* Manual Entry */}
-                    <Card className="p-6 bg-zinc-900/50 border-white/5 flex flex-col justify-center items-center text-center cursor-pointer hover:bg-white/5 transition-all group"
-                        onClick={handleAddRun}
-                    >
-                        <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 mb-2 group-hover:scale-110 transition-transform">
-                            <PenSquare size={24} />
-                        </div>
-                        <span className="font-bold text-white">Registro Manual</span>
-                    </Card>
-
                     {/* Map Mode */}
-                    <Card className="p-6 bg-gradient-to-br from-orange-600/20 to-orange-900/10 border-orange-500/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-orange-500/50 transition-all group"
+                    <Card className="col-span-1 md:col-span-2 p-6 bg-gradient-to-br from-orange-600/20 to-orange-900/10 border-orange-500/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-orange-500/50 transition-all group"
                         onClick={() => setIsTrackingMode(true)}
                     >
                         <div className="h-12 w-12 rounded-full bg-orange-500 flex items-center justify-center text-black mb-2 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(249,115,22,0.4)]">
