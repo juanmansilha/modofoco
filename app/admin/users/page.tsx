@@ -8,7 +8,7 @@ import {
     TableRow
 } from "@/components/ui/table"; // Assuming standard shadcn table
 import { Badge } from "@/components/ui/badge"; // Assuming standard shadcn badge or I'll make a div
-import { Button } from "@/components/ui/button"; // Assuming standard shadcn button
+import { Button } from "@/components/ui/Button"; // Assuming standard shadcn button
 // Note: If components don't exist, I'll use raw tailwind for speed then refactor.
 // Checking file tree, I don't see `components/ui` in the top level listing, but maybe deeper?
 // Wait, `components` has 65 children. Let's assume some exist or just write raw for safety.
@@ -80,8 +80,8 @@ export default async function UsersPage() {
                                 </td>
                                 <td className="px-4 py-3">
                                     <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${user.role === 'admin' ? 'bg-purple-400/10 text-purple-400 ring-purple-400/30' :
-                                            user.role === 'super_admin' ? 'bg-red-400/10 text-red-400 ring-red-400/30' :
-                                                'bg-zinc-400/10 text-zinc-400 ring-zinc-400/20'
+                                        user.role === 'super_admin' ? 'bg-red-400/10 text-red-400 ring-red-400/30' :
+                                            'bg-zinc-400/10 text-zinc-400 ring-zinc-400/20'
                                         }`}>
                                         {user.role || 'user'}
                                     </span>

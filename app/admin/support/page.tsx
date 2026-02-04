@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { MessageSquare, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -46,8 +46,8 @@ export default async function SupportPage() {
                                     <td className="px-4 py-3 capitalize">{ticket.category}</td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${ticket.status === 'open' ? 'bg-blue-400/10 text-blue-400 ring-blue-400/20' :
-                                                ticket.status === 'resolved' ? 'bg-green-400/10 text-green-400 ring-green-400/20' :
-                                                    'bg-zinc-400/10 text-zinc-400 ring-zinc-400/20'
+                                            ticket.status === 'resolved' ? 'bg-green-400/10 text-green-400 ring-green-400/20' :
+                                                'bg-zinc-400/10 text-zinc-400 ring-zinc-400/20'
                                             }`}>
                                             {ticket.status === 'open' ? 'Aberto' : ticket.status === 'resolved' ? 'Resolvido' : ticket.status}
                                         </span>

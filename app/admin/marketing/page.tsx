@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Plus, Megaphone, Eye, Play, Pause } from "lucide-react";
 import Link from "next/link";
 
@@ -43,8 +43,8 @@ export default async function MarketingPage() {
                                     <td className="px-4 py-3 capitalize">{campaign.type}</td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${campaign.status === 'active' ? 'bg-green-400/10 text-green-400 ring-green-400/20' :
-                                                campaign.status === 'paused' ? 'bg-yellow-400/10 text-yellow-400 ring-yellow-400/20' :
-                                                    'bg-zinc-400/10 text-zinc-400 ring-zinc-400/20'
+                                            campaign.status === 'paused' ? 'bg-yellow-400/10 text-yellow-400 ring-yellow-400/20' :
+                                                'bg-zinc-400/10 text-zinc-400 ring-zinc-400/20'
                                             }`}>
                                             {campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado'}
                                         </span>
