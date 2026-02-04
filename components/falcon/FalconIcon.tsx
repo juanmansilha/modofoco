@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { useGlobalData } from "@/contexts/GlobalDataProvider";
-import { FalconConfigModal } from "./FalconConfigModal";
+import { FalconChat } from "./FalconChat";
 import { cn } from "@/lib/utils";
 
 export function FalconIcon() {
@@ -39,7 +39,11 @@ export function FalconIcon() {
                 </div>
             </button>
 
-            <FalconConfigModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            {/* Chat Interface */}
+            {isModalOpen && <FalconChat isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+        </>
+    );
+}
         </>
     );
 }

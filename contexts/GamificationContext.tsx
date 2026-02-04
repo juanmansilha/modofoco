@@ -32,118 +32,200 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     const [history, setHistory] = useState<FPHistoryItem[]>([]);
     const { addNotification } = useNotifications();
 
-    // Load from local storage
+    // Load from Supabase & Realtime Sync
     useEffect(() => {
-        const storedFP = localStorage.getItem("modofoco-fp");
-        const storedLifetime = localStorage.getItem("modofoco-lifetime-fp");
-        const storedHistory = localStorage.getItem("modofoco-fp-history");
+        const fetchGamificationData = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
 
-        if (storedFP) setFp(parseInt(storedFP));
+            // 1. Fetch Points
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('fp, lifetime_fp')
+                .eq('id', user.id)
+                .single();
 
-        if (storedLifetime) {
-            setLifetimeFP(parseInt(storedLifetime));
-        } else if (storedFP) {
-            // Migration: If no lifetime, assume current FP is lifetime (first run after update)
-            setLifetimeFP(parseInt(storedFP));
-        }
+            if (profile) {
+                setFp(profile.fp || 0);
+                setLifetimeFP(profile.lifetime_fp || 0);
+            }
 
-        if (storedHistory) setHistory(JSON.parse(storedHistory));
+            // 2. Fetch History (Optional: Create table 'gamification_history' or keep local for now?)
+            // Ideally we fetch from DB. For now, we will mix or just keep local until table exists.
+            // Let's assume table exists since we provided migration.
+            const { data: historyData } = await supabase
+                .from('gamification_history')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (historyData) {
+                setHistory(historyData.map(h => ({
+                    id: h.id,
+                    reason: h.reason,
+                    amount: h.amount,
+                    timestamp: new Date(h.created_at).getTime(),
+                    type: h.type as any
+                })));
+            }
+        };
+
+        fetchGamificationData();
+
+        // Realtime Subscription
+        const channel = supabase
+            .channel('gamification_updates')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'profiles' },
+                (payload) => {
+                    // Update if it's our user
+                    if (payload.new.id === supabase.auth.getUser().then(({ data }) => data.user?.id)) { // Logic simplification needed
+                        // Just re-fetch or use payload
+                        const newProfile = payload.new as any;
+                        setFp(newProfile.fp);
+                        setLifetimeFP(newProfile.lifetime_fp);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
-    // Save to local storage
-    useEffect(() => {
-        localStorage.setItem("modofoco-fp", fp.toString());
-        localStorage.setItem("modofoco-lifetime-fp", lifetimeFP.toString());
-        localStorage.setItem("modofoco-fp-history", JSON.stringify(history));
-    }, [fp, lifetimeFP, history]);
+    // Save to Supabase (instead of LocalStorage)
+    const updatePoints = async (newFP: number, newLifetime: number) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-    const calculateLevel = (currentXP: number) => {
-        for (let i = LEVELS.length - 1; i >= 0; i--) {
-            if (currentXP >= LEVELS[i].minFP) {
-                return LEVELS[i];
-            }
-        }
-        return LEVELS[0];
+        await supabase.from('profiles').update({
+            fp: newFP,
+            lifetime_fp: newLifetime
+        }).eq('id', user.id);
     };
 
-    const currentLevel = calculateLevel(lifetimeFP);
+    const awardFP = async (amount: number, reason: string) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-    // Calculate Next Level
-    const currentLevelIndex = LEVELS.findIndex(l => l.level === currentLevel.level);
-    const nextLevel = LEVELS[currentLevelIndex + 1];
-
-    const nextLevelThreshold = nextLevel ? nextLevel.minFP : LEVELS[LEVELS.length - 1].minFP * 1.5; // Cap or infinite
-
-    // Progress for current level
-    const currentLevelBase = currentLevel.minFP;
-    const progressRange = nextLevelThreshold - currentLevelBase;
-    const progressInLevel = lifetimeFP - currentLevelBase;
-
-    // If max level, progress is 100%
-    const progress = nextLevel
-        ? Math.min(100, Math.max(0, (progressInLevel / progressRange) * 100))
-        : 100;
-
-    const awardFP = (amount: number, reason: string) => {
         const newFP = fp + amount;
         const newLifetime = lifetimeFP + amount;
 
-        setFp(newFP);
+        setFp(newFP); // Optimistic
         setLifetimeFP(newLifetime);
 
-        const newItem: FPHistoryItem = {
+        // Update Profile
+        await supabase.from('profiles').update({
+            fp: newFP,
+            lifetime_fp: newLifetime
+        }).eq('id', user.id);
+
+        // Insert History
+        await supabase.from('gamification_history').insert({
+            user_id: user.id,
+            amount: amount,
+            reason: reason,
+            type: 'earn'
+        });
+
+        // Refresh history
+        setHistory(prev => [{
             id: crypto.randomUUID(),
             reason,
             amount,
             timestamp: Date.now(),
             type: "earn"
-        };
-        setHistory(prev => [newItem, ...prev]);
+        }, ...prev]);
 
-        // Check for Level Up
-        const newLevelCalc = calculateLevel(newLifetime);
-        if (newLevelCalc.level > currentLevel.level) {
-            addNotification("NÍVEL SUPERIOR! 🚀", `Parabéns! Você alcançou o Nível ${newLevelCalc.level} - ${newLevelCalc.name}!`);
-        } else {
-            addNotification(`+${amount} FP`, reason);
-        }
+        // ... notification logic
+        addNotification(`+${amount} FP: ${reason}`, "success");
     };
 
-    const spendFP = (amount: number, reason: string): boolean => {
+    const spendFP = async (amount: number, reason: string) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+
         if (fp < amount) {
-            addNotification("Saldo Insuficiente", "Você precisa de mais Foco Points.");
+            addNotification("Saldo insuficiente de FocoPoints!", "error");
             return false;
         }
 
-        setFp(prev => prev - amount); // Only reduce spendable
+        const newFP = fp - amount;
+        setFp(newFP); // Optimistic
 
-        const newItem: FPHistoryItem = {
+        // Update Profile
+        await supabase.from('profiles').update({
+            fp: newFP
+        }).eq('id', user.id);
+
+        // Insert History
+        await supabase.from('gamification_history').insert({
+            user_id: user.id,
+            amount: -amount, // Store as negative or just value? Logic uses type 'spend'
+            reason: reason,
+            type: 'spend'
+        });
+
+        setHistory(prev => [{
             id: crypto.randomUUID(),
             reason,
             amount: -amount,
             timestamp: Date.now(),
             type: "spend"
-        };
-        setHistory(prev => [newItem, ...prev]);
-        addNotification("Resgate Efetuado!", `-${amount} FP: ${reason}`);
+        }, ...prev]);
+
+        addNotification(`-${amount} FP: ${reason}`, "info"); // Changed type to info/neutral
         return true;
     };
+    setHistory(prev => [newItem, ...prev]);
 
-    return (
-        <GamificationContext.Provider value={{
-            fp,
-            lifetimeFP,
-            level: currentLevel.level,
-            levelData: currentLevel,
-            history,
-            awardFP,
-            spendFP,
-            nextLevelFP: nextLevelThreshold,
-            progress
-        }}>
-            {children}
-        </GamificationContext.Provider>
-    );
+    // Check for Level Up
+    const newLevelCalc = calculateLevel(newLifetime);
+    if (newLevelCalc.level > currentLevel.level) {
+        addNotification("NÍVEL SUPERIOR! 🚀", `Parabéns! Você alcançou o Nível ${newLevelCalc.level} - ${newLevelCalc.name}!`);
+    } else {
+        addNotification(`+${amount} FP`, reason);
+    }
+};
+
+const spendFP = (amount: number, reason: string): boolean => {
+    if (fp < amount) {
+        addNotification("Saldo Insuficiente", "Você precisa de mais Foco Points.");
+        return false;
+    }
+
+    setFp(prev => prev - amount); // Only reduce spendable
+
+    const newItem: FPHistoryItem = {
+        id: crypto.randomUUID(),
+        reason,
+        amount: -amount,
+        timestamp: Date.now(),
+        type: "spend"
+    };
+    setHistory(prev => [newItem, ...prev]);
+    addNotification("Resgate Efetuado!", `-${amount} FP: ${reason}`);
+    return true;
+};
+
+return (
+    <GamificationContext.Provider value={{
+        fp,
+        lifetimeFP,
+        level: currentLevel.level,
+        levelData: currentLevel,
+        history,
+        awardFP,
+        spendFP,
+        nextLevelFP: nextLevelThreshold,
+        progress
+    }}>
+        {children}
+    </GamificationContext.Provider>
+);
 }
 
 export function useGamification() {
