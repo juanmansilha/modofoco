@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Users, DollarSign, Activity, AlertTriangle, Loader2, MousePointerClick } from "lucide-react";

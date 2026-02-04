@@ -115,7 +115,7 @@ export function AdminCharts({ users }: AdminChartsProps) {
                                 color: "#fff"
                             }}
                             itemStyle={{ color: "#818cf8" }}
-                            formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'MRR']}
+                            formatter={(value: any) => [value?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'MRR']}
                             labelStyle={{ color: "#a1a1aa", marginBottom: '0.5rem' }}
                         />
                         <Area
