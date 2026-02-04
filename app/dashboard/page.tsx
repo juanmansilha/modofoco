@@ -369,10 +369,10 @@ export default function DashboardPage() {
                             ) : (
                                 todayItems.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00")).map((item, idx) => (
                                     <div key={idx} className="flex items-start gap-4 relative">
-                                        <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 z-10 border-2 border-black ${item.completed ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                                        <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 z-10 border-2 border-black ${item.isCompleted ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
                                         <div className="flex-1 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                                             <div className="flex items-center justify-between">
-                                                <h4 className={`font-medium text-sm ${item.completed ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                                                <h4 className={`font-medium text-sm ${item.isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
                                                     {item.title}
                                                 </h4>
                                                 <span className="text-xs text-zinc-500 font-mono bg-black/20 px-1.5 py-0.5 rounded">
