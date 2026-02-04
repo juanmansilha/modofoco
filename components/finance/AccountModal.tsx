@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AccountModalProps {
@@ -17,6 +17,7 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
     const [type, setType] = useState("bank");
     const [color, setColor] = useState("#3b82f6");
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [isPrimary, setIsPrimary] = useState(false);
 
     useEffect(() => {
         if (isOpen && initialData) {
@@ -25,12 +26,14 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
             setType(initialData.type);
             setColor(initialData.color);
             setLogoUrl(initialData.logo_url || null);
+            setIsPrimary(initialData.is_primary || false);
         } else {
             setName("");
             setBalance("");
             setType("bank");
             setColor("#3b82f6");
             setLogoUrl(null);
+            setIsPrimary(false);
         }
     }, [isOpen, initialData]);
 
@@ -41,7 +44,8 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
             balance: parseFloat(balance) || 0,
             type,
             color,
-            logo_url: logoUrl
+            logo_url: logoUrl,
+            is_primary: isPrimary
         });
         onClose();
     };
@@ -167,6 +171,26 @@ export function AccountModal({ isOpen, onClose, onSave, initialData }: AccountMo
                                         <span className="text-xs text-zinc-500">Clique para alterar</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Primary Account Toggle */}
+                            <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-3">
+                                    <Star size={18} className={isPrimary ? "text-amber-400" : "text-zinc-500"} />
+                                    <div>
+                                        <p className="text-sm font-medium text-white">Conta Principal</p>
+                                        <p className="text-xs text-zinc-500">Será usada como padrão em novos lançamentos</p>
+                                    </div>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={isPrimary}
+                                        onChange={(e) => setIsPrimary(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                </label>
                             </div>
 
                             <button

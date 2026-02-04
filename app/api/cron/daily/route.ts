@@ -40,19 +40,27 @@ export async function GET(request: Request) {
             // For now, daily morning check:
 
             // A. Check Pending Tasks (Due Today/Overdue)
-            await brain.checkPendingTasks();
+            const tasksRes = await brain.checkPendingTasks();
 
             // B. Check Finance (Pending Bills)
-            await brain.notifyUpcomingBills();
+            const financeRes = await brain.notifyUpcomingBills();
 
             // C. Check Inactivity
-            await brain.checkInactivity();
+            const activityRes = await brain.checkInactivity();
 
-            results.push({ user: user.email, status: 'checked' });
+            results.push({
+                user: user.email,
+                status: 'checked',
+                details: {
+                    tasks: tasksRes.text,
+                    finance: financeRes.text,
+                    activity: activityRes.text
+                }
+            });
 
         } catch (e) {
             console.error(`Error checking user ${user.id}:`, e);
-            results.push({ user: user.id, status: 'error' });
+            results.push({ user: user.id, status: 'error', error: String(e) });
         }
     }
 

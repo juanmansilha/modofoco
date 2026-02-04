@@ -8,6 +8,7 @@ export interface FinanceAccount {
     type?: string;
     color?: string;
     logo_url?: string;
+    is_primary?: boolean;
     created_at?: string;
     updated_at?: string;
 }
@@ -23,6 +24,12 @@ export interface FinanceTransaction {
     category?: string;
     date: string;
     confirmed: boolean;
+    payment_method?: 'debit' | 'credit';
+    credit_card_id?: string;
+    creditCardId?: string; // Compatibility with frontend camelCase
+    invoice_id?: string;
+    installment_number?: number;
+    total_installments?: number;
     created_at?: string;
     updated_at?: string;
 }
@@ -34,6 +41,41 @@ export interface FinanceCategory {
     type: 'income' | 'expense';
     color?: string;
     icon?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============ CREDIT CARDS ============
+
+export interface CreditCard {
+    id: string;
+    user_id: string;
+    bank_account_id?: string;
+    name: string;
+    credit_limit: number;
+    available_limit: number;
+    closing_day: number;
+    due_day: number;
+    color?: string;
+    logo_url?: string;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface CreditCardInvoice {
+    id: string;
+    credit_card_id: string;
+    user_id: string;
+    reference_month: string;
+    start_date: string;
+    end_date: string;
+    due_date: string;
+    total_amount: number;
+    paid_amount: number;
+    status: 'open' | 'closed' | 'paid' | 'partial' | 'overdue';
+    paid_at?: string;
+    paid_from_account_id?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -450,4 +492,403 @@ export async function transferFunds(
     description: string = "Transferência entre contas"
 ): Promise<void> {
     return createTransferTransaction(userId, fromAccountId, toAccountId, amount, date, description, true, "Transferência");
+}
+
+// ============ CREDIT CARDS ============
+
+export async function getCreditCards(userId: string): Promise<CreditCard[]> {
+    const { data, error } = await supabase
+        .from('credit_cards')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function createCreditCard(card: Omit<CreditCard, 'id' | 'created_at' | 'updated_at'>): Promise<CreditCard> {
+    // Set available_limit to credit_limit on creation
+    const cardData = {
+        ...card,
+        available_limit: card.credit_limit
+    };
+
+    const { data, error } = await supabase
+        .from('credit_cards')
+        .insert([cardData])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function updateCreditCard(id: string, updates: Partial<CreditCard>): Promise<CreditCard> {
+    const { data, error } = await supabase
+        .from('credit_cards')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteCreditCard(id: string): Promise<void> {
+    // Soft delete - just mark as inactive
+    const { error } = await supabase
+        .from('credit_cards')
+        .update({ is_active: false })
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+// ============ CREDIT CARD LIMIT HELPERS ============
+
+async function updateCreditCardLimit(cardId: string, amountChange: number): Promise<void> {
+    const { data: card, error: getError } = await supabase
+        .from('credit_cards')
+        .select('available_limit')
+        .eq('id', cardId)
+        .single();
+
+    if (getError) throw getError;
+    if (!card) return;
+
+    const newLimit = Math.max(0, (card.available_limit || 0) + amountChange);
+
+    const { error: updateError } = await supabase
+        .from('credit_cards')
+        .update({ available_limit: newLimit })
+        .eq('id', cardId);
+
+    if (updateError) throw updateError;
+}
+
+// ============ INVOICES ============
+
+export async function getInvoices(userId: string, cardId?: string): Promise<CreditCardInvoice[]> {
+    let query = supabase
+        .from('credit_card_invoices')
+        .select('*')
+        .eq('user_id', userId)
+        .order('reference_month', { ascending: false });
+
+    if (cardId) {
+        query = query.eq('credit_card_id', cardId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+}
+
+export async function getCurrentInvoice(cardId: string, userId: string): Promise<CreditCardInvoice | null> {
+    // Get the card to know closing/due days
+    const { data: card, error: cardError } = await supabase
+        .from('credit_cards')
+        .select('closing_day, due_day')
+        .eq('id', cardId)
+        .single();
+
+    if (cardError) throw cardError;
+    if (!card) return null;
+
+    const now = new Date();
+    const currentDay = now.getDate();
+
+    // Determine current invoice period based on closing day
+    let refMonth: Date;
+    if (currentDay <= card.closing_day) {
+        // Still in current month's invoice
+        refMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else {
+        // Next month's invoice
+        refMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+
+    const refMonthStr = refMonth.toISOString().split('T')[0];
+
+    // Try to find existing invoice
+    const { data: existingInvoice, error: invoiceError } = await supabase
+        .from('credit_card_invoices')
+        .select('*')
+        .eq('credit_card_id', cardId)
+        .eq('reference_month', refMonthStr)
+        .single();
+
+    if (invoiceError && invoiceError.code !== 'PGRST116') {
+        throw invoiceError;
+    }
+
+    if (existingInvoice) {
+        return existingInvoice;
+    }
+
+    // Create new invoice if it doesn't exist
+    const startDate = new Date(refMonth.getFullYear(), refMonth.getMonth() - 1, card.closing_day + 1);
+    const endDate = new Date(refMonth.getFullYear(), refMonth.getMonth(), card.closing_day);
+    const dueDate = new Date(refMonth.getFullYear(), refMonth.getMonth(), card.due_day);
+
+    const { data: newInvoice, error: createError } = await supabase
+        .from('credit_card_invoices')
+        .insert([{
+            credit_card_id: cardId,
+            user_id: userId,
+            reference_month: refMonthStr,
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate.toISOString().split('T')[0],
+            due_date: dueDate.toISOString().split('T')[0],
+            total_amount: 0,
+            paid_amount: 0,
+            status: 'open'
+        }])
+        .select()
+        .single();
+
+    if (createError) throw createError;
+    return newInvoice;
+}
+
+export async function getOrCreateInvoiceForDate(
+    cardId: string,
+    userId: string,
+    transactionDate: Date
+): Promise<CreditCardInvoice> {
+    // Get card settings
+    const { data: card, error: cardError } = await supabase
+        .from('credit_cards')
+        .select('closing_day, due_day')
+        .eq('id', cardId)
+        .single();
+
+    if (cardError) throw cardError;
+    if (!card) throw new Error('Card not found');
+
+    const txDay = transactionDate.getDate();
+
+    // Determine which invoice this transaction belongs to
+    let refMonth: Date;
+    if (txDay <= card.closing_day) {
+        // Current month's invoice
+        refMonth = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1);
+    } else {
+        // Next month's invoice
+        refMonth = new Date(transactionDate.getFullYear(), transactionDate.getMonth() + 1, 1);
+    }
+
+    const refMonthStr = refMonth.toISOString().split('T')[0];
+
+    // Try to find existing invoice
+    const { data: existingInvoice, error: invoiceError } = await supabase
+        .from('credit_card_invoices')
+        .select('*')
+        .eq('credit_card_id', cardId)
+        .eq('reference_month', refMonthStr)
+        .single();
+
+    if (invoiceError && invoiceError.code !== 'PGRST116') {
+        throw invoiceError;
+    }
+
+    if (existingInvoice) {
+        return existingInvoice;
+    }
+
+    // Create new invoice
+    const startDate = new Date(refMonth.getFullYear(), refMonth.getMonth() - 1, card.closing_day + 1);
+    const endDate = new Date(refMonth.getFullYear(), refMonth.getMonth(), card.closing_day);
+    const dueDate = new Date(refMonth.getFullYear(), refMonth.getMonth(), card.due_day);
+
+    const { data: newInvoice, error: createError } = await supabase
+        .from('credit_card_invoices')
+        .insert([{
+            credit_card_id: cardId,
+            user_id: userId,
+            reference_month: refMonthStr,
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate.toISOString().split('T')[0],
+            due_date: dueDate.toISOString().split('T')[0],
+            total_amount: 0,
+            paid_amount: 0,
+            status: 'open'
+        }])
+        .select()
+        .single();
+
+    if (createError) throw createError;
+    return newInvoice;
+}
+
+async function updateInvoiceTotal(invoiceId: string, amountChange: number): Promise<void> {
+    const { data: invoice, error: getError } = await supabase
+        .from('credit_card_invoices')
+        .select('total_amount')
+        .eq('id', invoiceId)
+        .single();
+
+    if (getError) throw getError;
+    if (!invoice) return;
+
+    const newTotal = Math.max(0, (invoice.total_amount || 0) + amountChange);
+
+    const { error: updateError } = await supabase
+        .from('credit_card_invoices')
+        .update({ total_amount: newTotal })
+        .eq('id', invoiceId);
+
+    if (updateError) throw updateError;
+}
+
+export async function payInvoice(
+    invoiceId: string,
+    fromAccountId: string,
+    amount: number,
+    userId: string
+): Promise<CreditCardInvoice> {
+    // 1. Get invoice details
+    const { data: invoice, error: invoiceError } = await supabase
+        .from('credit_card_invoices')
+        .select('*, credit_cards(*)')
+        .eq('id', invoiceId)
+        .single();
+
+    if (invoiceError) throw invoiceError;
+    if (!invoice) throw new Error('Invoice not found');
+
+    const remainingAmount = invoice.total_amount - invoice.paid_amount;
+    const paymentAmount = Math.min(amount, remainingAmount);
+
+    // 2. Debit from account
+    await updateAccountBalance(fromAccountId, -paymentAmount);
+
+    // 3. Release credit card limit
+    await updateCreditCardLimit(invoice.credit_card_id, paymentAmount);
+
+    // 4. Update invoice
+    const newPaidAmount = invoice.paid_amount + paymentAmount;
+    const newStatus = newPaidAmount >= invoice.total_amount ? 'paid' : 'partial';
+
+    const { data: updatedInvoice, error: updateError } = await supabase
+        .from('credit_card_invoices')
+        .update({
+            paid_amount: newPaidAmount,
+            status: newStatus,
+            paid_at: newStatus === 'paid' ? new Date().toISOString() : null,
+            paid_from_account_id: fromAccountId
+        })
+        .eq('id', invoiceId)
+        .select()
+        .single();
+
+    if (updateError) throw updateError;
+
+    // 5. Create a transaction record for the payment
+    await supabase.from('finance_transactions').insert([{
+        user_id: userId,
+        account_id: fromAccountId,
+        description: `Pagamento de Fatura - ${(invoice as any).credit_cards?.name || 'Cartão'}`,
+        amount: paymentAmount,
+        type: 'expense',
+        category: 'Pagamento de Fatura',
+        date: new Date().toISOString(),
+        confirmed: true,
+        payment_method: 'debit'
+    }]);
+
+    return updatedInvoice;
+}
+
+// ============ CREDIT CARD TRANSACTIONS ============
+
+export async function createCreditCardTransaction(
+    transaction: {
+        user_id: string;
+        credit_card_id: string;
+        description: string;
+        amount: number;
+        category?: string;
+        date: string;
+        installments?: number;
+    }
+): Promise<FinanceTransaction[]> {
+    const { user_id, credit_card_id, description, amount, category, date, installments = 1 } = transaction;
+
+    const createdTransactions: FinanceTransaction[] = [];
+    const txDate = new Date(date);
+
+    for (let i = 0; i < installments; i++) {
+        // Calculate date for this installment
+        const installmentDate = new Date(txDate);
+        installmentDate.setMonth(installmentDate.getMonth() + i);
+
+        // Get or create invoice for this date
+        const invoice = await getOrCreateInvoiceForDate(credit_card_id, user_id, installmentDate);
+
+        const installmentAmount = amount / installments;
+        const installmentDesc = installments > 1
+            ? `${description} (${i + 1}/${installments})`
+            : description;
+
+        // Create transaction
+        const { data: tx, error } = await supabase
+            .from('finance_transactions')
+            .insert([{
+                user_id,
+                account_id: credit_card_id, // Using card ID as "account" for credit transactions
+                description: installmentDesc,
+                amount: installmentAmount,
+                type: 'expense',
+                category: category || 'Outros',
+                date: installmentDate.toISOString(),
+                confirmed: true, // Credit transactions are always "confirmed" (they happened)
+                payment_method: 'credit',
+                credit_card_id,
+                invoice_id: invoice.id,
+                installment_number: i + 1,
+                total_installments: installments
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        createdTransactions.push(tx);
+
+        // Update invoice total
+        await updateInvoiceTotal(invoice.id, installmentAmount);
+    }
+
+    // Reduce available limit (by total amount, not per installment)
+    await updateCreditCardLimit(credit_card_id, -amount);
+
+    return createdTransactions;
+}
+
+// ============ PRIMARY ACCOUNT ============
+
+export async function setPrimaryAccount(accountId: string, userId: string): Promise<void> {
+    // The database trigger will handle unsetting other primary accounts
+    const { error } = await supabase
+        .from('finance_accounts')
+        .update({ is_primary: true })
+        .eq('id', accountId)
+        .eq('user_id', userId);
+
+    if (error) throw error;
+}
+
+export async function getPrimaryAccount(userId: string): Promise<FinanceAccount | null> {
+    const { data, error } = await supabase
+        .from('finance_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data || null;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Plus, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Tag, ArrowRightLeft } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet, Tag, ArrowRightLeft, CreditCard } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -15,6 +15,9 @@ import { ExpensePieChart } from "@/components/finance/ExpensePieChart";
 import { MonthlyHistoryChart } from "@/components/finance/MonthlyHistoryChart";
 import { PageBanner } from "@/components/ui/PageBanner";
 import { CategoryManager } from "@/components/finance/CategoryManager";
+import { CreditCardModal } from "@/components/finance/CreditCardModal";
+import { CreditCardCard } from "@/components/finance/CreditCardCard";
+import { InvoiceModal } from "@/components/finance/InvoiceModal";
 import { useGamification } from "@/contexts/GamificationContext";
 import { FOCO_POINTS } from "@/lib/gamification";
 import * as SupabaseFinance from "@/lib/supabase-finance";
@@ -40,6 +43,15 @@ export default function FinancePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
 
+    // Credit Card State
+    const [creditCards, setCreditCards] = useState<any[]>([]);
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [isCreditCardModalOpen, setIsCreditCardModalOpen] = useState(false);
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [editingCreditCard, setEditingCreditCard] = useState<any>(null);
+    const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+    const [selectedCardForInvoice, setSelectedCardForInvoice] = useState<any>(null);
+
     // Get user ID from Supabase auth
     useEffect(() => {
         const getUser = async () => {
@@ -58,15 +70,24 @@ export default function FinancePage() {
         const loadData = async () => {
             try {
                 setIsLoading(true);
-                const [accountsData, transactionsData, categoriesData] = await Promise.all([
+                const [accountsData, transactionsData, categoriesData, creditCardsData] = await Promise.all([
                     SupabaseFinance.getFinanceAccounts(userId),
                     SupabaseFinance.getFinanceTransactions(userId),
-                    SupabaseFinance.getFinanceCategories(userId)
+                    SupabaseFinance.getFinanceCategories(userId),
+                    SupabaseFinance.getCreditCards(userId)
                 ]);
 
                 setAccounts(accountsData);
                 setTransactions(transactionsData);
                 setCategories(categoriesData);
+                setCreditCards(creditCardsData);
+
+                // Load current invoices for each credit card
+                const invoicesPromises = creditCardsData.map(card =>
+                    SupabaseFinance.getCurrentInvoice(card.id, userId)
+                );
+                const invoicesResults = await Promise.all(invoicesPromises);
+                setInvoices(invoicesResults.filter(Boolean));
             } catch (error) {
                 console.error('Error loading finance data:', error);
             } finally {
@@ -375,6 +396,114 @@ export default function FinancePage() {
         }
     };
 
+    // Credit Card Handlers
+    const handleSaveCreditCard = async (cardData: any) => {
+        if (!userId) return;
+        try {
+            if (editingCreditCard) {
+                const updated = await SupabaseFinance.updateCreditCard(editingCreditCard.id, cardData);
+                setCreditCards(creditCards.map(c => c.id === editingCreditCard.id ? updated : c));
+            } else {
+                const newCard = await SupabaseFinance.createCreditCard({ ...cardData, user_id: userId });
+                setCreditCards([...creditCards, newCard]);
+            }
+            setEditingCreditCard(null);
+            setIsCreditCardModalOpen(false);
+        } catch (error) {
+            console.error('Error saving credit card:', error);
+            alert('Erro ao salvar cartão de crédito.');
+        }
+    };
+
+    const handleDeleteCreditCard = async (cardId: string) => {
+        if (!confirm("Excluir este cartão de crédito? As transações não serão afetadas.")) return;
+        try {
+            await SupabaseFinance.deleteCreditCard(cardId);
+            setCreditCards(creditCards.filter(c => c.id !== cardId));
+        } catch (error) {
+            console.error('Error deleting credit card:', error);
+        }
+    };
+
+    const handleViewInvoice = async (cardId: string) => {
+        if (!userId) return;
+        const card = creditCards.find(c => c.id === cardId);
+        if (!card) return;
+
+        try {
+            // getCurrentInvoice creates the invoice if it doesn't exist
+            const invoice = await SupabaseFinance.getCurrentInvoice(cardId, userId);
+            if (invoice) {
+                setSelectedCardForInvoice(card);
+                setSelectedInvoice(invoice);
+                setIsInvoiceModalOpen(true);
+            }
+        } catch (error) {
+            console.error('Error loading invoice:', error);
+        }
+    };
+
+    const handlePayInvoice = async (invoiceId: string, accountId: string, amount: number) => {
+        if (!userId) return;
+        try {
+            await SupabaseFinance.payInvoice(invoiceId, accountId, amount, userId);
+
+            // Refresh data
+            const [accountsData, cardsData] = await Promise.all([
+                SupabaseFinance.getFinanceAccounts(userId),
+                SupabaseFinance.getCreditCards(userId)
+            ]);
+            setAccounts(accountsData);
+            setCreditCards(cardsData);
+
+            // Reload invoices
+            const invoicesPromises = cardsData.map(card =>
+                SupabaseFinance.getCurrentInvoice(card.id, userId)
+            );
+            const invoicesResults = await Promise.all(invoicesPromises);
+            setInvoices(invoicesResults.filter(Boolean));
+
+            alert('Pagamento de fatura realizado com sucesso!');
+        } catch (error) {
+            console.error('Error paying invoice:', error);
+            alert('Erro ao pagar fatura.');
+        }
+    };
+
+    const handleSaveCreditCardTransaction = async (txData: any) => {
+        if (!userId) return;
+        try {
+            await SupabaseFinance.createCreditCardTransaction({
+                user_id: userId,
+                credit_card_id: txData.credit_card_id,
+                description: txData.description,
+                amount: txData.amount,
+                category: txData.category,
+                date: txData.date,
+                installments: txData.installments
+            });
+
+            // Refresh credit cards and invoices
+            const cardsData = await SupabaseFinance.getCreditCards(userId);
+            setCreditCards(cardsData);
+
+            const invoicesPromises = cardsData.map(card =>
+                SupabaseFinance.getCurrentInvoice(card.id, userId)
+            );
+            const invoicesResults = await Promise.all(invoicesPromises);
+            setInvoices(invoicesResults.filter(Boolean));
+
+            // Also refresh transactions to show new credit transactions
+            const txData2 = await SupabaseFinance.getFinanceTransactions(userId);
+            setTransactions(txData2);
+
+            awardFP(FOCO_POINTS.ADD_FINANCE_ENTRY, "Compra no Cartão de Crédito");
+        } catch (error) {
+            console.error('Error saving credit card transaction:', error);
+            alert('Erro ao salvar transação no cartão.');
+        }
+    };
+
     return (
         <div className="h-full overflow-y-auto custom-scrollbar">
             {/* Banner */}
@@ -523,6 +652,55 @@ export default function FinancePage() {
                         </div>
                     </div>
 
+                    {/* Credit Cards Section */}
+                    {creditCards.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <CreditCard size={20} className="text-indigo-400" />
+                                    Cartões de Crédito
+                                </h3>
+                                <button
+                                    onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
+                                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                                    title="Novo cartão"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                            <div className="space-y-3">
+                                {creditCards.map(card => {
+                                    const cardInvoice = invoices.find(inv => inv.credit_card_id === card.id);
+                                    return (
+                                        <CreditCardCard
+                                            key={card.id}
+                                            {...card}
+                                            currentInvoiceAmount={cardInvoice?.total_amount || 0}
+                                            nextDueDate={cardInvoice?.due_date}
+                                            onEdit={(id) => {
+                                                setEditingCreditCard(creditCards.find(c => c.id === id));
+                                                setIsCreditCardModalOpen(true);
+                                            }}
+                                            onDelete={handleDeleteCreditCard}
+                                            onViewInvoice={handleViewInvoice}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Credit Card Button (when no cards) */}
+                    {creditCards.length === 0 && (
+                        <button
+                            onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
+                            className="w-full p-4 border-2 border-dashed border-white/10 rounded-2xl text-zinc-500 hover:text-white hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2"
+                        >
+                            <CreditCard size={20} />
+                            Adicionar Cartão de Crédito
+                        </button>
+                    )}
+
                     {/* Transactions Column */}
                     <div className="lg:col-span-2 space-y-4">
                         <div className="flex items-center justify-between">
@@ -568,7 +746,9 @@ export default function FinancePage() {
                     setEditingTransaction(null);
                 }}
                 onSave={handleSaveTransaction}
+                onSaveCreditCard={handleSaveCreditCardTransaction}
                 accounts={accounts}
+                creditCards={creditCards}
                 categories={categories}
                 initialData={editingTransaction}
             />
@@ -585,6 +765,24 @@ export default function FinancePage() {
                 onClose={() => setIsTransferModalOpen(false)}
                 onTransfer={handleTransfer}
                 accounts={accounts}
+            />
+
+            <CreditCardModal
+                isOpen={isCreditCardModalOpen}
+                onClose={() => { setIsCreditCardModalOpen(false); setEditingCreditCard(null); }}
+                onSave={handleSaveCreditCard}
+                accounts={accounts}
+                initialData={editingCreditCard}
+            />
+
+            <InvoiceModal
+                isOpen={isInvoiceModalOpen}
+                onClose={() => { setIsInvoiceModalOpen(false); setSelectedInvoice(null); setSelectedCardForInvoice(null); }}
+                onPay={handlePayInvoice}
+                invoice={selectedInvoice}
+                card={selectedCardForInvoice}
+                accounts={accounts}
+                transactions={transactions.filter(t => t.invoice_id === selectedInvoice?.id)}
             />
         </div>
     );

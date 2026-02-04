@@ -1,0 +1,22 @@
+
+> modofoco@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.58:3000
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 1038ms
+Supabase credentials missing. Check .env.local
+🦅 Daily Cron: Checking 2 users...
+ GET /api/cron/daily 200 in 4.2s (compile: 442ms, render: 3.8s)
+ GET / 200 in 2.8s (compile: 2.5s, render: 253ms)
+ GET / 200 in 240ms (compile: 29ms, render: 211ms)
+ GET /login 200 in 441ms (compile: 418ms, render: 23ms)
+ GET /icons/icon-512x512.png 404 in 479ms (compile: 402ms, render: 77ms)
+ GET /icons/icon-192x192.png 404 in 504ms (compile: 442ms, render: 62ms)
+Supabase credentials missing. Check .env.local
+🦅 Daily Cron: Checking 2 users...
+ GET /api/cron/daily 200 in 4.0s (compile: 722ms, render: 3.3s)
