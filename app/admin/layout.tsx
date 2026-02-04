@@ -13,13 +13,16 @@ export default function AdminLayout({
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [isAuthorized, setIsAuthorized] = useState(false);
+    const [debugMessage, setDebugMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session) {
-                router.push("/login");
+                console.log("No session found");
+                setDebugMessage("Sessão não encontrada. Você não está logado.");
+                setLoading(false);
                 return;
             }
 
@@ -30,21 +33,10 @@ export default function AdminLayout({
                 .single();
 
             if (!profile || !["admin", "super_admin"].includes(profile.role)) {
-                // Redirect if not admin
-                // router.push("/dashboard"); 
-                // For development, I'll allow it but warn, OR just wait for the user to set the role in DB
-                // If I strictly redirect, they can't access it until they run SQL. 
-                // I will redirect for now to be "correct", but implementing a loading screen first.
-
-                // Uncomment below for strict mode
-                // router.push("/dashboard");
                 console.warn("User is not admin:", profile?.role);
-
-                // ALLOWING ACCESS FOR TESTING IF ROLE IS NULL (Just created)
-                // In prod, this should be strict.
-                if (profile?.role && !["admin", "super_admin"].includes(profile.role)) {
-                    // router.push("/dashboard"); 
-                }
+                setDebugMessage(`Usuário logado, mas sem permissão. Role atual: '${profile?.role || "null"}'`);
+                setLoading(false);
+                return;
             }
 
             setIsAuthorized(true);
@@ -60,6 +52,24 @@ export default function AdminLayout({
                 Carregando Admin OS...
             </div>
         );
+    }
+
+    if (!isAuthorized) {
+        return (
+            <div className="flex h-screen flex-col items-center justify-center bg-zinc-950 text-white gap-4">
+                <h1 className="text-xl font-bold text-red-500">Acesso Restrito (Debug Mode)</h1>
+                <p>O sistema detectou que você não tem permissão ou não está logado.</p>
+                <div className="p-4 bg-zinc-900 rounded border border-zinc-800 text-sm font-mono text-zinc-400">
+                    STATUS: {debugMessage || "Desconhecido"}
+                </div>
+                <button
+                    onClick={() => router.push('/login')}
+                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-white"
+                >
+                    Ir para Login
+                </button>
+            </div>
+        )
     }
 
     return (
