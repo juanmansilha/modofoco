@@ -53,6 +53,10 @@ export async function updateGymSession(id: string, updates: any) {
         dbUpdates.last_performed = dbUpdates.lastPerformed;
         delete dbUpdates.lastPerformed;
     }
+    if (dbUpdates.completedDates) {
+        dbUpdates.completed_dates = dbUpdates.completedDates;
+        delete dbUpdates.completedDates;
+    }
 
     const { data, error } = await supabase
         .from('gym_sessions')
@@ -179,6 +183,11 @@ export async function createMeal(meal: any) {
 export async function updateMeal(id: string, updates: any) {
     const dbUpdates = { ...updates };
     if (dbUpdates.userId) delete dbUpdates.userId;
+
+    if (dbUpdates.completedDates) {
+        dbUpdates.completed_dates = dbUpdates.completedDates;
+        delete dbUpdates.completedDates;
+    }
 
     const { data, error } = await supabase
         .from('meals')
