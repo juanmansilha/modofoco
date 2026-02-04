@@ -7,7 +7,7 @@ interface CashBalanceCardProps {
 
 export function CashBalanceCard({ balance }: CashBalanceCardProps) {
     return (
-        <Card className="col-span-1 bg-zinc-900/30 border-white/5 p-6 flex flex-col justify-between group hover:border-emerald-500/20 transition-all">
+        <Card className="col-span-1 bg-zinc-900/30 border-white/5 p-6 flex flex-col justify-between group hover:border-emerald-500/20 transition-all h-full">
             <div className="flex items-center justify-between">
                 <p className="text-sm text-zinc-400 font-medium">Caixa Atual</p>
                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500 group-hover:text-emerald-400 transition-colors">

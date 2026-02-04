@@ -31,7 +31,6 @@ export default function LoginPage() {
         try {
             if (mode === "login") {
                 await login(email, password);
-                addNotification("Bem-vindo!", "Login realizado com sucesso.");
                 router.push("/dashboard");
             } else {
                 await signup(email, password, name);
