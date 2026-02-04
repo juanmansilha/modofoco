@@ -41,6 +41,7 @@ import { startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { CashBalanceCard } from "@/components/dashboard/CashBalanceCard";
 import { HabitsCard } from "@/components/dashboard/HabitsCard";
 import { FinancialSummaryCard } from "@/components/dashboard/FinancialSummaryCard";
+import { TaskModal } from "@/components/tasks/TaskModal";
 
 export default function DashboardPage() {
     const {
@@ -263,6 +264,25 @@ export default function DashboardPage() {
         });
     }, [runSessions, gymRoutines]);
 
+    // Navigation
+    const router = require("next/navigation").useRouter();
+
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<any>(null);
+
+    const handleTaskClick = (task: any) => {
+        setSelectedTask({ ...task, source: 'native' }); // Assuming native for simplicity or map types
+        setIsTaskModalOpen(true);
+    };
+
+    const handleSaveTask = async (taskData: any) => {
+        // Dashboard is read-only or quick edit? 
+        // Let's assume view only for now or very basic update.
+        // Actually GlobalDataProvider has updateTask.
+        // But let's just close modal for now to mimic "View".
+        setIsTaskModalOpen(false);
+    };
+
     return (
         <div className="space-y-6 p-4 md:p-8 h-full overflow-y-auto custom-scrollbar bg-background text-foreground pb-24">
 
@@ -278,10 +298,9 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* TOP ROW: Focus (50%), Cash (25%), Habits (25%) */}
+            {/* TOP ROW: Focus, Cash, Habits */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                {/* Main Focus (Span 2) */}
+                {/* Main Focus */}
                 <Card className="col-span-1 md:col-span-2 bg-linear-to-br from-indigo-950/40 to-black border-indigo-500/20 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity">
                         <Target size={20} className="text-indigo-400" />
@@ -293,7 +312,9 @@ export default function DashboardPage() {
                                 Foco Principal
                             </p>
                             {priorityTasks.length > 0 ? (
-                                <h3 className="text-xl md:text-2xl font-bold text-white leading-tight">
+                                <h3 className="text-xl md:text-2xl font-bold text-white leading-tight cursor-pointer hover:text-indigo-300 transition-colors"
+                                    onClick={() => handleTaskClick(priorityTasks[0])}
+                                >
                                     {priorityTasks[0].title}
                                 </h3>
                             ) : (
@@ -318,8 +339,10 @@ export default function DashboardPage() {
                     </div>
                 </Card>
 
-                {/* Cash Balance */}
-                <CashBalanceCard balance={financialData.balance} />
+                {/* Cash Balance - Clickable */}
+                <div onClick={() => router.push('/finance')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                    <CashBalanceCard balance={financialData.balance} />
+                </div>
 
                 {/* Habits */}
                 <HabitsCard completed={completedItems} total={totalItems} />
@@ -328,11 +351,45 @@ export default function DashboardPage() {
             {/* MAIN CONTENT GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Left Column: Health & Charts (Span 2) */}
+                {/* Left Column (Span 2) */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* Health Chart */}
+                    {/* Daily Routine Section */}
                     <Card className="p-6 border-white/5 bg-zinc-900/30">
+                        <h3 className="font-bold text-white flex items-center gap-2 mb-6">
+                            <Calendar size={18} className="text-teal-500" />
+                            Rotina de Hoje
+                        </h3>
+                        <div className="space-y-4 relative pl-4">
+                            {/* Vertical Line */}
+                            <div className="absolute left-[21px] top-2 bottom-2 w-0.5 bg-zinc-800" />
+
+                            {todayItems.length === 0 ? (
+                                <p className="text-sm text-zinc-500">Nenhuma atividade planejada para hoje.</p>
+                            ) : (
+                                todayItems.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00")).map((item, idx) => (
+                                    <div key={idx} className="flex items-start gap-4 relative">
+                                        <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 z-10 border-2 border-black ${item.completed ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                                        <div className="flex-1 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className={`font-medium text-sm ${item.completed ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                                                    {item.title}
+                                                </h4>
+                                                <span className="text-xs text-zinc-500 font-mono bg-black/20 px-1.5 py-0.5 rounded">
+                                                    {item.time}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-zinc-500 mt-1 capitalize">{item.type}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </Card>
+
+                    {/* Health Activity */}
+                    <Card className="p-6 border-white/5 bg-zinc-900/30">
+                        {/* ... Chart Content - Keeping same ... */}
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="font-bold text-white flex items-center gap-2">
@@ -345,7 +402,6 @@ export default function DashboardPage() {
                                 <span className="w-3 h-3 rounded-full bg-rose-500 block"></span>
                             </div>
                         </div>
-
                         <div className="h-[200px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={activityData}>
@@ -371,25 +427,18 @@ export default function DashboardPage() {
                         </div>
                     </Card>
 
-                    {/* Finance Flow Chart (Moved here to fill space) */}
-                    <Card className="p-6 border-white/5 bg-zinc-900/30">
-                        <h3 className="font-bold text-white flex items-center gap-2 mb-6">
-                            <Activity size={18} className="text-indigo-500" />
-                            Fluxo Financeiro (Mensal)
-                        </h3>
-                        <FinanceChart data={chartData} />
-                    </Card>
-
                 </div>
 
-                {/* Right Column: Finance Summary & Tasks (Span 1) */}
+                {/* Right Column (Span 1) */}
                 <div className="space-y-6">
 
-                    {/* Financial Summary */}
-                    <FinancialSummaryCard
-                        financialData={financialData}
-                        categoryData={expenseCategoryData}
-                    />
+                    {/* Financial Summary - Clickable */}
+                    <div onClick={() => router.push('/finance')} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                        <FinancialSummaryCard
+                            financialData={financialData}
+                            categoryData={expenseCategoryData}
+                        />
+                    </div>
 
                     {/* Next Tasks */}
                     <Card className="p-6 border-white/5 bg-zinc-900/30">
@@ -404,7 +453,11 @@ export default function DashboardPage() {
                                 <p className="text-zinc-500 text-sm">Tudo limpo!</p>
                             ) : (
                                 nextTasks.slice(0, 3).map(task => (
-                                    <div key={task.id} className="p-3 hover:bg-white/5 rounded-lg transition-colors flex items-start gap-3 group cursor-pointer border border-transparent hover:border-white/5">
+                                    <div
+                                        key={task.id}
+                                        onClick={() => handleTaskClick(task)}
+                                        className="p-3 hover:bg-white/5 rounded-lg transition-colors flex items-start gap-3 group cursor-pointer border border-transparent hover:border-white/5"
+                                    >
                                         <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${task.priority === 'high' ? 'bg-red-500' :
                                             task.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
                                             }`} />
@@ -415,13 +468,23 @@ export default function DashboardPage() {
                                 ))
                             )}
                         </div>
-                        <button className="w-full mt-4 py-2 text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5">
+                        <button
+                            onClick={() => router.push('/tasks')}
+                            className="w-full mt-4 py-2 text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
+                        >
                             Ver mais
                         </button>
                     </Card>
 
                 </div>
             </div>
+
+            <TaskModal
+                isOpen={isTaskModalOpen}
+                onClose={() => setIsTaskModalOpen(false)}
+                initialData={selectedTask}
+                mode="view" // View only from dashboard for now, or 'edit' if we wire up updateTask
+            />
         </div>
     );
 }
