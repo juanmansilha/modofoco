@@ -23,6 +23,7 @@ export default function LoginPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(true);
     const [error, setError] = useState("");
 
     const { addNotification } = useNotifications();
@@ -34,7 +35,7 @@ export default function LoginPage() {
 
         try {
             if (mode === "login") {
-                await login(email, password);
+                await login(email, password, rememberMe);
                 // Wait a moment for state to update, then navigate
                 setTimeout(() => {
                     router.push("/dashboard");

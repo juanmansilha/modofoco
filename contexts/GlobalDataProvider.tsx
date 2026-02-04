@@ -121,7 +121,7 @@ interface GlobalDataContextType {
     // User Data
     userData: UserData;
     updateUserData: (data: Partial<UserData>) => void;
-    login: (email: string, pass: string) => Promise<void>;
+    login: (email: string, pass: string, rememberMe?: boolean) => Promise<void>;
     signup: (email: string, pass: string, name: string) => Promise<void>;
     logout: () => Promise<void>;
     isAuthLoading: boolean;
@@ -865,7 +865,12 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         }
     };
 
-    const login = async (email: string, pass: string) => {
+    const login = async (email: string, pass: string, rememberMe: boolean = true) => {
+        // 0. Set Persistence
+        // Note: Supabase defaults to localStorage. If rememberMe is false, we could use SESSION_STORAGE (session only).
+        // But for mobile/PWA, we usually want persistent. 
+        // We will implement explicit validtion here.
+
         // 1. Auth Sign In
         const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) throw error;
