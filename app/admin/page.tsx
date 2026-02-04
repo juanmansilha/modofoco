@@ -80,12 +80,16 @@ export default function AdminDashboard() {
                 // In production, query your analytics table
                 const { count: tasksCount } = await supabase.from("tasks").select("*", { count: "exact", head: true });
                 const { count: financeCount } = await supabase.from("finance_transactions").select("*", { count: "exact", head: true });
-                const { count: workoutCount } = await supabase.from("workout_logs").select("*", { count: "exact", head: true });
+                // Fix: 'workout_logs' doesn't exist, use 'gym_sessions' and 'run_sessions'
+                const { count: gymCount } = await supabase.from("gym_sessions").select("*", { count: "exact", head: true });
+                const { count: runCount } = await supabase.from("run_sessions").select("*", { count: "exact", head: true });
+
+                const totalHealth = (gymCount || 0) + (runCount || 0);
 
                 setUsageData([
                     { name: 'Tarefas', value: tasksCount || 0, color: '#6366f1' }, // Indigo
                     { name: 'Financeiro', value: financeCount || 0, color: '#10b981' }, // Emerald
-                    { name: 'Saúde', value: workoutCount || 0, color: '#f43f5e' }, // Rose
+                    { name: 'Saúde', value: totalHealth, color: '#f43f5e' }, // Rose
                 ]);
 
             } catch (error) {
