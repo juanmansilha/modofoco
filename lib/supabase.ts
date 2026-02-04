@@ -10,5 +10,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
     supabaseUrl || "",
-    supabaseAnonKey || "fallback-key-to-prevent-crash"
+    supabaseAnonKey || "fallback-key-to-prevent-crash",
+    {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storageKey: 'modofoco-auth',
+        }
+    }
 );
