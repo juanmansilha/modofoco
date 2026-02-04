@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 
 import { uploadAvatar } from "@/lib/supabase-storage";
 import { FalconConfigModal } from "@/components/falcon/FalconConfigModal";
-import { FalconIcon } from "@/components/falcon/FalconIcon";
 
 export default function SettingsPage() {
     const { userData, updateUserData, logout } = useGlobalData();
@@ -310,7 +309,6 @@ export default function SettingsPage() {
                             <p className="text-zinc-400 text-sm">Receba resumos e alertas direto no seu WhatsApp.</p>
                         </div>
                         <div className="flex gap-2">
-                            <FalconIcon />
                             {/* FalconIcon handles the modal opening, so we just place it here or use a custom button trigger if needed. 
                                  Actually, let's make a dedicated button here to be clearer. 
                              */}
