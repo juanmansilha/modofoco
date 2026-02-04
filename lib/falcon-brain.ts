@@ -164,6 +164,49 @@ export class FalconBrain {
         return { text: "Sem tarefas pendentes." };
     }
 
+    async checkInactivity(): Promise<FalconResponse> {
+        // Check for last activity in: tasks, finance, gamification
+        // We can check 'updated_at' on tasks or 'created_at' on history
+
+        // 1. Get last gamification entry (most reliable generic activity log)
+        const { data: lastActivity } = await this.supabase
+            .from('gamification_history')
+            .select('created_at')
+            .eq('user_id', this.userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (!lastActivity) return { text: "Sem histórico." };
+
+        const lastDate = new Date(lastActivity.created_at);
+        const now = new Date();
+        const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+
+        // 24h = 1 day, 48h = 2 days, 72h = 3 days
+
+        // Rules from training:
+        // 24h: "Nenhuma atividade registrada hoje..."
+        // 48h: "Dois dias sem registros..."
+        // 72h: "Três dias sem atividade..."
+
+        // We need to ensure we don't spam. This check runs once a day.
+        // So simply checking if > 24h is enough for "Inactivity Alert".
+
+        if (diffHours >= 72) {
+            await this.sendWhatsAppMessage("🦅 Três dias sem atividade.\nDisciplina se constrói no retorno.");
+            return { text: "Inatividade 72h detectada." };
+        } else if (diffHours >= 48) {
+            await this.sendWhatsAppMessage("🦅 Dois dias sem registros.\nRetomar pelo básico já é progresso.");
+            return { text: "Inatividade 48h detectada." };
+        } else if (diffHours >= 24) {
+            await this.sendWhatsAppMessage("🦅 Nenhuma atividade recente.\nPequenos registros mantêm o ritmo.");
+            return { text: "Inatividade 24h detectada." };
+        }
+
+        return { text: "Atividade recente detectada." };
+    }
+
     // --- Helper ---
 
     private async sendWhatsAppMessage(message: string): Promise<void> {
