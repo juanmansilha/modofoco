@@ -28,7 +28,6 @@ export interface GymSession {
     time?: string;
     recurrence?: string[];
     exercises: any[];
-    completed?: boolean;
     completed?: boolean; // Legacy
     completedDates?: string[]; // New ISO string array
     lastPerformed?: string;
@@ -710,6 +709,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             const matchesRecurrence = gym.recurrence && gym.recurrence.includes(dayKey);
 
             if (matchesDate || matchesRecurrence) {
+                const isCompleted = gym.completedDates?.includes(dateStr) || false;
                 timeline.push({
                     id: `timeline-gym-${gym.id}-${dateStr}`,
                     originalId: gym.id,
@@ -717,7 +717,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     title: gym.name,
                     subtitle: gym.focus,
                     time: gym.time || "00:00",
-                    isCompleted: !!gym.completed,
+                    isCompleted: isCompleted,
                     data: gym
                 });
             }
@@ -745,6 +745,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             const matchesRecurrence = meal.recurrence && meal.recurrence.includes(dayKey);
 
             if (matchesDate || matchesRecurrence) {
+                const isCompleted = meal.completedDates?.includes(dateStr) || false;
                 timeline.push({
                     id: `timeline-meal-${meal.id}-${dateStr}`,
                     originalId: meal.id,
@@ -752,7 +753,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     title: meal.name,
                     subtitle: meal.type,
                     time: meal.time,
-                    isCompleted: false,
+                    isCompleted: isCompleted,
                     data: meal
                 });
             }
@@ -761,6 +762,11 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
         // 4. General Routines
         generalRoutines.forEach(routine => {
             if (routine.days.includes(dayKey)) {
+                // Routines were already using a similar logic in previous schema (completed_dates in DB?), 
+                // but let's assume they might need similar update or are fine.
+                // Looking at interface, GeneralRoutine has completedDates?: string[] already?
+                // The interface shows `completedDates?: string[]` on line 19.
+                const isCompleted = routine.completedDates?.includes(dateStr) || false;
                 timeline.push({
                     id: `timeline-routine-${routine.id}-${dateStr}`,
                     originalId: routine.id,
@@ -768,7 +774,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     title: routine.title,
                     subtitle: `${routine.steps.length} passos`,
                     time: routine.time,
-                    isCompleted: false,
+                    isCompleted: isCompleted,
                     data: routine
                 });
             }
@@ -914,7 +920,6 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
             isAuthLoading,
 
             // Health
-            gymRoutines, runSessions, dietMeals, generalRoutines,
             gymRoutines, runSessions, dietMeals, generalRoutines,
             addGymRoutine, updateGymRoutine, deleteGymRoutine, toggleGymCompletion,
             addRunSession, updateRunSession, deleteRunSession, toggleRunCompletion,
