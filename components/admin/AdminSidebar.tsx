@@ -39,16 +39,7 @@ const menuItems = [
         icon: Megaphone,
         href: "/admin/marketing",
     },
-    {
-        title: "Conteúdo",
-        icon: MessageSquare,
-        href: "/admin/content",
-    },
-    {
-        title: "Suporte",
-        icon: LifeBuoy,
-        href: "/admin/support",
-    },
+
     {
         title: "Sistema",
         icon: Activity,
