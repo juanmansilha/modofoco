@@ -1,26 +1,43 @@
 export const FOCO_POINTS = {
-    // Tasks
+    // Tasks (New & Legacy Aliases)
     TASK_SIMPLE: 3,    // Max 5 per day
     TASK_MEDIUM: 5,    // 30-90 mins
     TASK_HARD: 8,      // High mental load
     DAILY_GOAL: 20,    // Key tasks completed
+    COMPLETE_TASK: 3,  // Alias for backward compat
+    ADD_TASK: 2,       // Legacy
 
     // Study
     STUDY_SESSION: 15, // 25 min pomodoro
+    COMPLETE_STUDY_SESSION: 15, // Alias
     STUDY_BONUS: 5,    // 2+ sessions in a day
     STUDY_STREAK_7: 20,
 
-    // Health
+    // Health / Fitness
     WORKOUT_RUN: 12,
+    COMPLETE_WORKOUT: 12, // Alias
+    COMPLETE_RUN: 12,     // Alias
+    GENERATE_AI_WORKOUT: 2, // Legacy
     FASTING: 15,
+    COMPLETE_FASTING: 15, // Alias
     SLEEP: 3,
+    REGISTER_SLEEP: 3,    // Alias
     FOOD_LOG: 3,
+    ADD_MEAL: 3,          // Alias
 
-    // Routine
+    // Routine & Goals
     DAILY_LOGIN: 2,
     STREAK_7: 10,
     STREAK_30: 40,
-    PERFECT_DAY: 15, // Routine + Workout + Study
+    PERFECT_DAY: 15,
+    COMPLETE_GOAL: 30,           // Legacy
+    COMPLETE_ROUTINE_PARTIAL: 5, // Legacy
+    COMPLETE_ROUTINE_FULL: 10,   // Legacy
+
+    // Finance & Vault (Legacy preserved)
+    ADD_FINANCE_ENTRY: 2,
+    FINANCE_MONTH_GREEN: 20,
+    ADD_VAULT_ITEM: 2,
 } as const;
 
 export const ANTI_FARM = {
