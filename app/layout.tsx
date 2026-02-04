@@ -38,15 +38,15 @@ export default function RootLayout({
       >
         <IntroAnimation>
           <ServiceWorkerRegister />
-          <NotificationProvider>
-            <GlobalDataProvider>
+          <GlobalDataProvider>
+            <NotificationProvider>
               <GamificationProvider>
                 <AppShell>
                   {children}
                 </AppShell>
               </GamificationProvider>
-            </GlobalDataProvider>
-          </NotificationProvider>
+            </NotificationProvider>
+          </GlobalDataProvider>
         </IntroAnimation>
       </body>
     </html>
