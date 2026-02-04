@@ -223,6 +223,12 @@ export class FalconBrain {
         }
 
         const phone = profile.whatsapp;
+        // WhatsApp Disabled by User Request (migration to n8n planned)
+        console.log(`[Falcon] WhatsApp Disabled. Message would be: "${message}"`);
+        return;
+
+        /* 
+        // Legacy Evolution API Code
         const instanceName = process.env.EVO_INSTANCE_NAME;
         const apiKey = process.env.EVO_API_KEY;
         const apiUrl = process.env.EVO_API_URL;
@@ -248,6 +254,7 @@ export class FalconBrain {
         } catch (error) {
             console.error("Falcon: Network error sending WhatsApp:", error);
         }
+        */
     }
 
     // --- Legacy / Unused Command Parsing (Preserved but commented) ---
