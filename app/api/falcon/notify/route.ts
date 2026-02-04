@@ -47,7 +47,12 @@ export async function GET(req: NextRequest) {
     }
 
     const brain = new FalconBrain(profile.id, supabaseAdmin);
+
+    // Trigger Finance Check
     await brain.notifyUpcomingBills();
 
-    return NextResponse.json({ status: "Notification Sent", profile: profile.email });
+    // Trigger Task Check (for demo)
+    await brain.checkPendingTasks();
+
+    return NextResponse.json({ status: "Notifications Sent (Bills & Tasks)", profile: profile.email });
 }
