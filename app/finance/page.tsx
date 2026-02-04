@@ -650,56 +650,53 @@ export default function FinancePage() {
                                 />
                             ))}
                         </div>
-                    </div>
 
-                    {/* Credit Cards Section */}
-                    {creditCards.length > 0 && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <CreditCard size={20} className="text-indigo-400" />
+                        {/* Credit Cards Section - inside accounts column */}
+                        <div className="mt-6 pt-6 border-t border-white/5">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                    <CreditCard size={18} className="text-indigo-400" />
                                     Cartões de Crédito
                                 </h3>
                                 <button
                                     onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
-                                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                                    className="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
                                     title="Novo cartão"
                                 >
-                                    <Plus size={20} />
+                                    <Plus size={16} />
                                 </button>
                             </div>
-                            <div className="space-y-3">
-                                {creditCards.map(card => {
-                                    const cardInvoice = invoices.find(inv => inv.credit_card_id === card.id);
-                                    return (
-                                        <CreditCardCard
-                                            key={card.id}
-                                            {...card}
-                                            currentInvoiceAmount={cardInvoice?.total_amount || 0}
-                                            nextDueDate={cardInvoice?.due_date}
-                                            onEdit={(id) => {
-                                                setEditingCreditCard(creditCards.find(c => c.id === id));
-                                                setIsCreditCardModalOpen(true);
-                                            }}
-                                            onDelete={handleDeleteCreditCard}
-                                            onViewInvoice={handleViewInvoice}
-                                        />
-                                    );
-                                })}
-                            </div>
+                            {creditCards.length > 0 ? (
+                                <div className="space-y-3">
+                                    {creditCards.map(card => {
+                                        const cardInvoice = invoices.find(inv => inv.credit_card_id === card.id);
+                                        return (
+                                            <CreditCardCard
+                                                key={card.id}
+                                                {...card}
+                                                currentInvoiceAmount={cardInvoice?.total_amount || 0}
+                                                nextDueDate={cardInvoice?.due_date}
+                                                onEdit={(id) => {
+                                                    setEditingCreditCard(creditCards.find(c => c.id === id));
+                                                    setIsCreditCardModalOpen(true);
+                                                }}
+                                                onDelete={handleDeleteCreditCard}
+                                                onViewInvoice={handleViewInvoice}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
+                                    className="w-full p-4 border-2 border-dashed border-white/10 rounded-xl text-zinc-500 hover:text-white hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2 text-sm"
+                                >
+                                    <CreditCard size={18} />
+                                    Adicionar Cartão
+                                </button>
+                            )}
                         </div>
-                    )}
-
-                    {/* Add Credit Card Button (when no cards) */}
-                    {creditCards.length === 0 && (
-                        <button
-                            onClick={() => { setEditingCreditCard(null); setIsCreditCardModalOpen(true); }}
-                            className="w-full p-4 border-2 border-dashed border-white/10 rounded-2xl text-zinc-500 hover:text-white hover:border-indigo-500/50 transition-all flex items-center justify-center gap-2"
-                        >
-                            <CreditCard size={20} />
-                            Adicionar Cartão de Crédito
-                        </button>
-                    )}
+                    </div>
 
                     {/* Transactions Column */}
                     <div className="lg:col-span-2 space-y-4">
