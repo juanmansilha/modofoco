@@ -61,6 +61,7 @@ export interface UserData {
     falconEnabled?: boolean;
     photo?: string | null;
     focus?: string[];
+    role?: string;
     discovery?: string;
     onboardingCompleted: boolean;
 }
