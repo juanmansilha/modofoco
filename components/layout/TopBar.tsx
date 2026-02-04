@@ -11,11 +11,13 @@ import { useGamification } from "@/contexts/GamificationContext";
 import { NotificationPanel } from "@/components/ui/NotificationPanel";
 import { useGlobalData } from "@/contexts/GlobalDataProvider"; // Added import
 import { FalconIcon } from "@/components/falcon/FalconIcon";
+import { LEVELS } from "@/lib/gamification";
 
 export function TopBar() {
     const [showNotifications, setShowNotifications] = useState(false);
     const { unreadCount } = useNotifications();
     const { fp, level, progress } = useGamification();
+    const levelData = LEVELS.find((l) => l.level === level) || LEVELS[0];
 
     return (
         <header className="h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40">
@@ -38,17 +40,17 @@ export function TopBar() {
 
                 {/* ZP Stats */}
                 <Link href="/rewards" className="hidden md:flex items-center gap-3 px-3 py-1.5 bg-white/5 rounded-full border border-white/5 hover:bg-white/10 transition-colors group">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center border border-white/10 shadow-lg">
-                        <Trophy size={14} className="text-white" />
+                    <div className="h-8 w-8 flex items-center justify-center">
+                        <Trophy size={18} className={levelData.text} />
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center justify-between gap-4">
                             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Nível {level}</span>
-                            <span className="text-[10px] font-bold text-amber-400">{fp} FP</span>
+                            <span className={cn("text-[10px] font-bold", levelData.text)}>{fp} FP</span>
                         </div>
                         <div className="h-1 w-24 bg-black rounded-full overflow-hidden mt-1">
                             <div
-                                className="h-full bg-gradient-to-r from-yellow-500 to-amber-600"
+                                className={cn("h-full", levelData.bg)}
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
