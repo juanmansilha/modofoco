@@ -7,8 +7,8 @@ self.addEventListener('install', (event) => {
             return cache.addAll([
                 '/',
                 '/manifest.json',
-                '/icons/icon-192x192.png',
-                '/icons/icon-512x512.png',
+                // '/icons/icon-192x192.png', // Icons missing
+                // '/icons/icon-512x512.png', // Icons missing
             ]);
         })
     );
