@@ -68,64 +68,69 @@ export default function AdminDashboard() {
             </div>
         );
     }
-    <div className="space-y-8">
-        <div>
-            <h2 className="text-3xl font-bold tracking-tight text-white">Dashboard do Comandante</h2>
-            <p className="text-zinc-400">Visão geral da saúde do sistema e crescimento.</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-                title="Usuários Totais"
-                value="1,234"
-                change="+12% este mês"
-                icon={Users}
-                trend="up"
-            />
-            <StatCard
-                title="MRR"
-                value="R$ 12.450"
-                change="+5% este mês"
-                icon={DollarSign}
-                trend="up"
-            />
-            <StatCard
-                title="Saúde do Sistema"
-                value="98.2%"
-                change="-0.5% vs semana passada"
-                icon={Activity}
-                trend="down"
-            />
-            <StatCard
-                title="Alertas Críticos"
-                value="3"
-                change="+2 novos"
-                icon={AlertTriangle}
-                trend="down"
-            />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <div className="col-span-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-                <h3 className="mb-4 text-lg font-medium text-white">Crescimento de Usuários</h3>
-                <div className="h-[300px] w-full rounded border border-zinc-700 bg-zinc-900/50 p-4">
-                    <GrowthChart />
-                </div>
+    return (
+        <div className="space-y-8">
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight text-white">Dashboard do Comandante</h2>
+                <p className="text-zinc-400">Visão geral da saúde do sistema e crescimento.</p>
             </div>
-            <div className="col-span-3 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-                <h3 className="mb-4 text-lg font-medium text-white">Últimas Atividades</h3>
-                <div className="space-y-4">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="flex items-center">
-                            <div className="ml-4 space-y-1">
-                                <p className="text-sm font-medium leading-none text-white">João Silva assinou o plano PRO</p>
-                                <p className="text-sm text-zinc-400">Há 2 minutos</p>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                    title="Usuários Totais"
+                    value={stats.users.toLocaleString()}
+                    change="Atualizado agora"
+                    icon={Users}
+                    trend="up"
+                />
+                <StatCard
+                    title="MRR (Estimado)"
+                    value={`R$ ${stats.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    change="Baseado em usuários"
+                    icon={DollarSign}
+                    trend="up"
+                />
+                <StatCard
+                    title="Saúde do Sistema"
+                    value={`${stats.health}%`}
+                    change="Estável"
+                    icon={Activity}
+                    trend="up"
+                />
+                <StatCard
+                    title="Tickets Pendentes"
+                    value={stats.alerts}
+                    change="Aguardando ação"
+                    icon={AlertTriangle}
+                    trend={stats.alerts > 5 ? "down" : "up"}
+                />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <div className="col-span-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+                    <h3 className="mb-4 text-lg font-medium text-white">Crescimento de Usuários</h3>
+                    <div className="h-[300px] w-full rounded border border-zinc-700 bg-zinc-900/50 p-4">
+                        <GrowthChart />
+                    </div>
+                </div>
+                <div className="col-span-3 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+                    <h3 className="mb-4 text-lg font-medium text-white">Status do Sistema</h3>
+                    <div className="space-y-4">
+                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-3">
+                            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                            <div>
+                                <p className="text-sm font-medium text-green-400">Todos os sistemas operacionais</p>
+                                <p className="text-xs text-zinc-500">Database: Conectado • Storage: OK</p>
                             </div>
                         </div>
-                    ))}
+
+                        <div className="p-4 bg-zinc-800/30 rounded-lg">
+                            <p className="text-xs text-zinc-500 mb-2">Versão do Admin OS</p>
+                            <p className="text-sm font-mono text-zinc-300">v1.2.0 (Stable)</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     );
 }
