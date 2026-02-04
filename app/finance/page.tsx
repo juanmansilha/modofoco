@@ -228,6 +228,21 @@ export default function FinancePage() {
         });
     }, [filteredTransactions, currentMonth]);
 
+    const creditMetrics = useMemo(() => {
+        const totalLimit = creditCards.reduce((acc, card) => acc + card.credit_limit, 0);
+        const totalAvailable = creditCards.reduce((acc, card) => acc + card.available_limit, 0);
+        const totalUsed = totalLimit - totalAvailable;
+        const usagePercentage = totalLimit > 0 ? (totalUsed / totalLimit) * 100 : 0;
+
+        return {
+            totalLimit,
+            totalAvailable,
+            totalUsed,
+            usagePercentage
+        };
+    }, [creditCards]);
+
+
     // --- CRUD Handlers ---
 
     const handleSaveAccount = async (account: any) => {
@@ -548,7 +563,7 @@ export default function FinancePage() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
@@ -585,6 +600,44 @@ export default function FinancePage() {
                                 </p>
                             </div>
                         )}
+                    </div>
+
+                    {/* Credit Card Limit Metric */}
+                    <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg"><CreditCard size={20} /></div>
+                            <span className="text-zinc-400 text-sm">Limite de Crédito</span>
+                        </div>
+
+                        <div className="mt-1 space-y-3">
+                            <div>
+                                <div className="flex justify-between text-xs mb-1.5 ">
+                                    <span className="text-zinc-400">Utilizado</span>
+                                    <span className="text-white font-medium">{creditMetrics.usagePercentage.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-500 ${creditMetrics.usagePercentage > 80 ? 'bg-red-500' : creditMetrics.usagePercentage > 50 ? 'bg-amber-500' : 'bg-purple-500'}`}
+                                        style={{ width: `${Math.min(creditMetrics.usagePercentage, 100)}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-end pt-1">
+                                <div>
+                                    <p className="text-xs text-zinc-500 mb-0.5">Disponível</p>
+                                    <p className="text-lg font-bold text-white leading-none">
+                                        {creditMetrics.totalAvailable.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xs text-zinc-500 mb-0.5">Usado</p>
+                                    <p className="text-sm font-medium text-zinc-300 leading-none">
+                                        {creditMetrics.totalUsed.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
