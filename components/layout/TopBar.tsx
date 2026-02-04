@@ -17,7 +17,9 @@ export function TopBar() {
     const [showNotifications, setShowNotifications] = useState(false);
     const { unreadCount } = useNotifications();
     const { fp, level, progress } = useGamification();
+    const { userData } = useGlobalData(); // Get userData
     const levelData = LEVELS.find((l) => l.level === level) || LEVELS[0];
+    const isAdmin = ["admin", "super_admin"].includes(userData?.role || "");
 
     return (
         <header className="h-20 border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-40">
@@ -56,6 +58,15 @@ export function TopBar() {
                         </div>
                     </div>
                 </Link>
+
+                {isAdmin && (
+                    <Link
+                        href="/admin"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-full transition-colors text-rose-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wider"
+                    >
+                        Admin
+                    </Link>
+                )}
 
                 <div className="h-8 w-px bg-white/10" />
 

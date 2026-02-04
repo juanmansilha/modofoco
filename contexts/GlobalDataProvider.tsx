@@ -812,6 +812,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
                     photo: data.photo || null,
                     onboardingCompleted: data.onboarding_completed || false,
                     focus: data.focus || [],
+                    role: data.role || "user", // Fetch role
                     discovery: data.discovery || ""
                 });
             }
