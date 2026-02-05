@@ -16,7 +16,7 @@ export interface FinanceAccount {
 export interface FinanceTransaction {
     id: string;
     user_id: string;
-    account_id: string;
+    account_id: string | null;
     accountId?: string; // Compatibility with frontend camelCase
     description: string;
     amount: number;
@@ -197,7 +197,9 @@ export async function createFinanceTransaction(transaction: Omit<FinanceTransact
     // UPDATE BALANCE IF CONFIRMED
     if (confirmed) {
         const amountChange = transaction.type === 'income' ? transaction.amount : -transaction.amount;
-        await updateAccountBalance(dbTransaction.account_id, amountChange);
+        if (dbTransaction.account_id) {
+            await updateAccountBalance(dbTransaction.account_id, amountChange);
+        }
     }
 
     return data;
@@ -839,7 +841,7 @@ export async function createCreditCardTransaction(
             .from('finance_transactions')
             .insert([{
                 user_id,
-                account_id: credit_card_id, // Using card ID as "account" for credit transactions
+                account_id: null, // Credit transactions don't belong to a bank account directly
                 description: installmentDesc,
                 amount: installmentAmount,
                 type: 'expense',
