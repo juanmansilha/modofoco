@@ -62,7 +62,8 @@ export default function DashboardPage() {
         pendingExpenses: number;
         upcomingBills?: any[];
         overdueBills?: any[];
-    }>({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0, upcomingBills: [], overdueBills: [] });
+        availableCredit: number;
+    }>({ balance: 0, expenses: 0, income: 0, pendingIncome: 0, pendingExpenses: 0, upcomingBills: [], overdueBills: [], availableCredit: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [expenseCategoryData, setExpenseCategoryData] = useState<any[]>([]);
     const [accounts, setAccounts] = useState<any[]>([]); // New state
@@ -84,15 +85,17 @@ export default function DashboardPage() {
 
         const loadFinanceData = async () => {
             try {
-                const [accountsData, transactions, categories] = await Promise.all([
+                const [accountsData, transactions, categories, creditCards] = await Promise.all([
                     SupabaseFinance.getFinanceAccounts(userId),
                     SupabaseFinance.getFinanceTransactions(userId),
-                    SupabaseFinance.getFinanceCategories(userId)
+                    SupabaseFinance.getFinanceCategories(userId),
+                    SupabaseFinance.getCreditCards(userId)
                 ]);
 
                 setAccounts(accountsData);
 
                 const totalBalance = accountsData.reduce((sum: number, acc: any) => sum + (acc.balance || 0), 0);
+                const totalAvailableCredit = creditCards.reduce((sum: number, card: any) => sum + (card.available_limit || 0), 0);
                 const currentMonth = new Date();
 
                 // Transactions for Stats (Current Month)
@@ -147,7 +150,8 @@ export default function DashboardPage() {
                     pendingIncome,
                     pendingExpenses,
                     upcomingBills: futurePending,
-                    overdueBills: overduePending // Pass overdue bills
+                    overdueBills: overduePending, // Pass overdue bills
+                    availableCredit: totalAvailableCredit
                 });
 
                 // Chart Data (Daily)
@@ -341,7 +345,7 @@ export default function DashboardPage() {
 
                 {/* Cash Balance - Clickable */}
                 <div onClick={() => router.push('/finance')} className="cursor-pointer transition-transform hover:scale-[1.02]">
-                    <CashBalanceCard balance={financialData.balance} />
+                    <CashBalanceCard balance={financialData.balance} availableCredit={financialData.availableCredit} />
                 </div>
 
                 {/* Habits */}
