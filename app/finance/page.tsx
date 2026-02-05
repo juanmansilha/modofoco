@@ -569,7 +569,12 @@ export default function FinancePage() {
                             <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Wallet size={20} /></div>
                             <span className="text-zinc-400 text-sm">Saldo Total</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">{totalBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        <p className="text-2xl font-bold text-white">
+                            {(totalBalance + creditMetrics.totalAvailable).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                            saldo todas contas + crédito
+                        </p>
                     </div>
                     <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5">
                         <div className="flex items-center gap-3 mb-2">
